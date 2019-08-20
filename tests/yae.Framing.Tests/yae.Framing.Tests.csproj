@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\yae.Buffers\yae.Buffers.csproj" />
+    <ProjectReference Include="..\..\src\yae.Framing\yae.Framing.csproj" />
   </ItemGroup>
 
 </Project>

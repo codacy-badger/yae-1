@@ -5,28 +5,25 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using yae.Buffers.Framing;
 
-namespace yae.Buffers.Framing
+[assembly: InternalsVisibleTo("yae.Framing.Tests")]
+namespace yae.Framing
 {
-    class PipeConsumerFrame<T> : IPipeConsumer<T>
+    internal class PipeFrameConsumer<T> : IFrameConsumer<T>
     {
-        private readonly PipeReader _reader;
+        private PipeReader _reader;
         private readonly IFrameDecoder<T> _decoder;
 
-        public bool IsProgressing { get; private set; }
+        internal bool IsProgressing { get; private set; }
 
 
-        internal PipeConsumerFrame(PipeReader reader, IFrameDecoder<T> decoder)
+        internal PipeFrameConsumer(PipeReader reader, IFrameDecoder<T> decoder)
         {
             _reader = reader;
             _decoder = decoder;
             IsProgressing = false;
         }
 
-        //todo: make tests
-        //todo: optimize hot paths
-        //todo: split into smaller parts!
         /// <summary>
         /// Consumes asynchronously the pipe and returns frames
         /// </summary>
@@ -52,7 +49,7 @@ namespace yae.Buffers.Framing
 
 
                 if (readResult.IsCanceled)
-                    break;
+                    break; //try to handle it btw
 
                 holder.Buffer = readResult.Buffer;
 
@@ -73,12 +70,11 @@ namespace yae.Buffers.Framing
 
         public void Dispose()
         {
-            var reader = _reader;
-            if (reader != null)
-            {
-                reader.CancelPendingRead();
-                reader.Complete();
-            }
+            GC.SuppressFinalize(this);
+            var reader = Interlocked.Exchange(ref _reader, null);
+            if (reader == null) return;
+            try { reader.Complete(); } catch { }
+            try { reader.CancelPendingRead(); } catch { }
         }
     }
 }

@@ -3,11 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29123.88
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Buffers", "yae.Buffers\yae.Buffers.csproj", "{8FDFF46B-D885-47D6-85AA-9767CC121BEB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Framing", "src\yae.Framing\yae.Framing.csproj", "{8FDFF46B-D885-47D6-85AA-9767CC121BEB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Buffers.Tests", "yae.Buffers.Tests\yae.Buffers.Tests.csproj", "{C69EA15B-058A-4DE6-A646-5758C844F1F9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Framing.Tests", "tests\yae.Framing.Tests\yae.Framing.Tests.csproj", "{C69EA15B-058A-4DE6-A646-5758C844F1F9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Threading", "yae.Threading\yae.Threading.csproj", "{4D509121-7FF3-4420-8A45-6CF920A49EE2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Framing.Sample", "samples\yae.Framing.Sample\yae.Framing.Sample.csproj", "{A7AF085B-70BF-48B1-95AA-CA4E55A4D504}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Framing.Benchmarks", "benchmarks\yae.Framing.Benchmarks\yae.Framing.Benchmarks.csproj", "{BB9BBEB2-ED45-4C4F-B805-24BC7B0EF917}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E5A325B5-16AE-43C9-8244-2929B978545D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{282D50FD-0D00-4EFF-87E4-447D21A494F3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{354A3E14-3D4A-4582-A75C-B436499F711D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{363EA382-9301-4497-B3EF-2036C7E5C79F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,13 +33,23 @@ Global
 		{C69EA15B-058A-4DE6-A646-5758C844F1F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C69EA15B-058A-4DE6-A646-5758C844F1F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C69EA15B-058A-4DE6-A646-5758C844F1F9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4D509121-7FF3-4420-8A45-6CF920A49EE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4D509121-7FF3-4420-8A45-6CF920A49EE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4D509121-7FF3-4420-8A45-6CF920A49EE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4D509121-7FF3-4420-8A45-6CF920A49EE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7AF085B-70BF-48B1-95AA-CA4E55A4D504}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7AF085B-70BF-48B1-95AA-CA4E55A4D504}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7AF085B-70BF-48B1-95AA-CA4E55A4D504}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7AF085B-70BF-48B1-95AA-CA4E55A4D504}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB9BBEB2-ED45-4C4F-B805-24BC7B0EF917}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB9BBEB2-ED45-4C4F-B805-24BC7B0EF917}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB9BBEB2-ED45-4C4F-B805-24BC7B0EF917}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB9BBEB2-ED45-4C4F-B805-24BC7B0EF917}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8FDFF46B-D885-47D6-85AA-9767CC121BEB} = {E5A325B5-16AE-43C9-8244-2929B978545D}
+		{C69EA15B-058A-4DE6-A646-5758C844F1F9} = {282D50FD-0D00-4EFF-87E4-447D21A494F3}
+		{A7AF085B-70BF-48B1-95AA-CA4E55A4D504} = {363EA382-9301-4497-B3EF-2036C7E5C79F}
+		{BB9BBEB2-ED45-4C4F-B805-24BC7B0EF917} = {354A3E14-3D4A-4582-A75C-B436499F711D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A177D3CD-3E0F-44CF-95EE-D59101C5055F}
