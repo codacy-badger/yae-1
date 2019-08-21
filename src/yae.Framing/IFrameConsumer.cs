@@ -7,5 +7,6 @@ namespace yae.Framing
     public interface IFrameConsumer<T> : IDisposable
     {
         IAsyncEnumerable<T> ConsumeAsync(CancellationToken token = default);
+        void Close(Exception ex = null);
     }
 }

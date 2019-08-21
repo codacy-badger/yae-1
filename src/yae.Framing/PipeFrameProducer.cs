@@ -19,10 +19,8 @@ namespace yae.Framing
 
         public async ValueTask<int> ProduceAsync(T frame)
         {
-            using (await _mutex.LockAsync())
-            {
-                return await WriteAsync(_writer, frame);
-            }
+            using var _ = await _mutex.LockAsync();
+            return await WriteAsync(_writer, frame);
         }
 
         protected abstract ValueTask<int> WriteAsync(PipeWriter writer, T frame);

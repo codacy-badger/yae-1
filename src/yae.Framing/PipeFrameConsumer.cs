@@ -32,11 +32,11 @@ namespace yae.Framing
         /// <exception cref="OperationCanceledException">Thrown on cancellation</exception>
         public async IAsyncEnumerable<T> ConsumeAsync([EnumeratorCancellation] CancellationToken token = default)
         {
-            var reader = _reader; //to prevent dispose!
-            var holder = new BufferHolder();
+            //todo: better try-catch style!
+            var reader = _reader ?? throw new ObjectDisposedException(ToString()); //to prevent dispose!
             while (true)
             {
-                ReadResult readResult;
+                /*ReadResult readResult;
                 try
                 {
                     if (!(IsProgressing && reader.TryRead(out readResult)))
@@ -45,36 +45,57 @@ namespace yae.Framing
                 catch
                 {
                     break;
+                }*/
+                ReadResult readResult;
+                try
+                {
+                    readResult = await reader.ReadAsync(token);
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        Close(ex);
+                    }
+                    catch
+                    {
+                    }
+
+                    break;
                 }
 
 
                 if (readResult.IsCanceled)
                     break; //try to handle it btw
 
-                holder.Buffer = readResult.Buffer;
+                var buffer = readResult.Buffer;
 
                 IsProgressing = false;
 
-                foreach (var frame in _decoder.AsEnumerable(holder))
+                while (_decoder.TryParseFrame(buffer, out var frame, out var consumedTo))
                 {
                     IsProgressing = true;
                     yield return frame;
+                    buffer = buffer.Slice(consumedTo);
                 }
 
-                reader.AdvanceTo(holder.Buffer.Start, holder.Buffer.End);
+                reader.AdvanceTo(buffer.Start, buffer.End);
 
                 if (!IsProgressing && readResult.IsCompleted) break;
 
             }
         }
 
-        public void Dispose()
+        public void Close(Exception ex = null)
         {
-            GC.SuppressFinalize(this);
             var reader = Interlocked.Exchange(ref _reader, null);
-            if (reader == null) return;
-            try { reader.Complete(); } catch { }
+            if (reader == null) throw new ObjectDisposedException(ToString());
+
+            GC.SuppressFinalize(this);
+            try { reader.Complete(ex); } catch { }
             try { reader.CancelPendingRead(); } catch { }
         }
+
+        public void Dispose() => Close();
     }
 }

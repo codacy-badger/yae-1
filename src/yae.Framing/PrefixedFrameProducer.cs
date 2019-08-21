@@ -8,10 +8,8 @@ namespace yae.Framing
     {
         private readonly IPrefixedFrameEncoder<T> _encoder;
 
-        public PrefixedFrameProducer(PipeWriter writer, IPrefixedFrameEncoder<T> encoder) : base(writer)
-        {
-            _encoder = encoder;
-        }
+        public PrefixedFrameProducer(PipeWriter writer, IPrefixedFrameEncoder<T> encoder) : base(writer) 
+            => _encoder = encoder;
 
         protected override ValueTask<int> WriteAsync(PipeWriter writer, T frame)
         {
@@ -26,7 +24,7 @@ namespace yae.Framing
                 : AwaitAndWrite(writer, headerLen, payload);
         }
 
-        private async ValueTask<int> AwaitAndWrite(PipeWriter writer, int headerLen, ReadOnlyMemory<byte> payload)
+        private static async ValueTask<int> AwaitAndWrite(PipeWriter writer, int headerLen, ReadOnlyMemory<byte> payload)
         {
             await writer.WriteAsync(payload);
             return headerLen + payload.Length;

@@ -43,31 +43,30 @@ namespace yae.Framing.Benchmarks
         {
             _data = new byte[1024];
         }
-        public bool TryParseFrame(SequenceReader<byte> buffer, out Frame frame, out SequencePosition consumedTo)
+        public bool TryParseFrame(ReadOnlySequence<byte> buffer, out Frame frame, out SequencePosition consumedTo)
         {
-            //Console.WriteLine(buffer.Remaining);
-            if(!buffer.TryReadLittleEndian(out int length)) // && buffer.Remaining < length)
-            {
-                //Console.WriteLine($"remaining={buffer.Remaining}");
-                frame = default;
-                consumedTo = default;
-                return false;
-            }
-            //Console.WriteLine($"remaining={buffer.Remaining}, length={length}, Remaining < length = {buffer.Remaining < length}");
-            if(buffer.Remaining < length)
+            var reader = new SequenceReader<byte>(buffer);
+
+            if(!reader.TryReadLittleEndian(out int length))
             {
                 frame = default;
                 consumedTo = default;
                 return false;
             }
+
+            if(reader.Remaining < length)
+            {
+                frame = default;
+                consumedTo = default;
+                return false;
+            }
+
             frame = new Frame
             {
                 Data = _data
             };
-            //buffer.Sequence.Slice(4, length).CopyTo(frame.Data.Span);
-            //Console.WriteLine(buffer.Sequence.Length);
-            consumedTo = buffer.Sequence.GetPosition(4 + length);
-            //Console.WriteLine(consumedTo);
+
+            consumedTo = reader.Sequence.GetPosition(4 + length);
             return true;
         }
     }
