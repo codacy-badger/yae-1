@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -26,22 +27,51 @@ namespace yae.Framing.Tests
             BinaryPrimitives.WriteInt32LittleEndian(span, frame.Data.Length); //writes length
         }
     }
+
+    class TestPipeFrameProducer : PipeFrameProducer<Frame>
+    {
+        protected override ValueTask<FlushResult> WriteAsync(PipeWriter writer, Frame frame)
+        {
+            return writer.WriteAsync(frame.Data);
+        }
+
+        public TestPipeFrameProducer(PipeWriter writer) : base(writer)
+        {
+
+        }
+    }
+
     public class PipeProducerFrameTests
     {
-        /*[Fact]
-        public async Task ValentinPd()
+        [Fact]
+        public void ValueTaskDefault()
+        {
+            ValueTask<FlushResult> result = default;
+            Assert.True(result.IsCompletedSuccessfully);
+        }
+
+        [Fact]
+        public async Task SlowPath()
+        {
+            var (producer, _) = GetProducer();
+            await producer._semaphore.WaitAsync();
+            //let's write and release
+            var produceTask = producer.ProduceAsync(GetFrame());
+            producer._semaphore.Release(); //released...
+            var result = await produceTask;
+            Assert.True(produceTask.IsCompleted);
+            Assert.Equal(-1, result); //-1 means slowPath
+        }
+
+        private Frame GetFrame()
+        {
+            return new Frame {Data = new byte[256]};
+        }
+        private (TestPipeFrameProducer producer, PipeReader reader) GetProducer()
         {
             var pipe = new Pipe();
-            var producer = new BasePipeFrameProducerBasePipeFrame<Frame>(pipe.Writer, new Encoder());
-            var frm1 = new Frame();
-            frm1.Data = new byte[1024];
-            var written = await producer.ProduceAsync(frm1);
-            Assert.Equal(1028, written);
+            return (new TestPipeFrameProducer(pipe.Writer), pipe.Reader);
 
-            var frm2 = new Frame();
-            frm2.Data = new byte[0];
-            written = await producer.ProduceAsync(frm2);
-            Assert.Equal(4, written);
-        }*/
+        }
     }
 }

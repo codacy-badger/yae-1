@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
@@ -13,7 +14,7 @@ namespace yae.Framing
     {
         private PipeReader _reader;
         private readonly IFrameDecoder<T> _decoder;
-
+        private CancellationTokenSource _cts;
         internal bool IsProgressing { get; private set; }
 
 
@@ -34,6 +35,7 @@ namespace yae.Framing
         {
             //todo: better try-catch style!
             var reader = _reader ?? throw new ObjectDisposedException(ToString()); //to prevent dispose!
+            _cts = new CancellationTokenSource();
             while (true)
             {
                 /*ReadResult readResult;
@@ -46,7 +48,7 @@ namespace yae.Framing
                 {
                     break;
                 }*/
-                ReadResult readResult;
+                /*ReadResult readResult;
                 try
                 {
                     readResult = await reader.ReadAsync(token);
@@ -81,8 +83,43 @@ namespace yae.Framing
 
                 reader.AdvanceTo(buffer.Start, buffer.End);
 
-                if (!IsProgressing && readResult.IsCompleted) break;
+                if (!IsProgressing && readResult.IsCompleted) break;*/
 
+                var buffer = await GetBuffer(_cts);
+                IsProgressing = false;
+
+                while (_decoder.TryParseFrame(buffer, out var frame, out var consumedTo))
+                {
+                    IsProgressing = true;
+                    yield return frame;
+                    buffer = buffer.Slice(consumedTo);
+                }
+
+                reader.AdvanceTo(buffer.Start, buffer.End);
+
+
+            }
+        }
+
+        public async ValueTask<ReadOnlySequence<byte>> GetBuffer(CancellationTokenSource cts)
+        {
+            try
+            {
+                var readResult = await _reader.ReadAsync(cts.Token);
+                if (readResult.IsCanceled)
+                {
+                    cts.Cancel();
+                    return default;
+                }
+
+                var buffer = readResult.Buffer;
+                if (!IsProgressing && readResult.IsCompleted) cts.Cancel(false);
+                return buffer;
+            }
+            catch (Exception ex)
+            {
+                Close(ex);
+                return default;
             }
         }
 

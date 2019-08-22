@@ -8,30 +8,75 @@ namespace yae.Framing
 {
     public abstract class PipeFrameProducer<T> : IFrameProducer<T>
     {
-        private readonly AsyncLock _mutex;
         private PipeWriter _writer;
+        internal readonly SemaphoreSlim _semaphore;
 
         protected PipeFrameProducer(PipeWriter writer)
         {
             _writer = writer;
-            _mutex = new AsyncLock();
+            _semaphore = new SemaphoreSlim(1);
         }
 
-        public async ValueTask<int> ProduceAsync(T frame)
+        public ValueTask<int> ProduceAsync(T frame)
         {
-            using var _ = await _mutex.LockAsync();
-            return await WriteAsync(_writer, frame);
+            async ValueTask<int> AwaitFlushAndRelease(ValueTask<FlushResult> flush)
+            {
+                try
+                {
+                    await flush;
+                    return 0;
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+
+            if (!_semaphore.Wait(0))
+            {
+                return WriteAsyncSlowPath(frame);
+            }
+
+            var release = true;
+            try
+            {
+                var writer = _writer ?? throw new ObjectDisposedException(ToString());
+                var write = WriteAsync(writer, frame);
+                if (write.IsCompletedSuccessfully) return new ValueTask<int>(0);
+                release = false;
+                return AwaitFlushAndRelease(write);
+            }
+            finally
+            {
+                if (release) _semaphore.Release();
+            }
         }
 
-        protected abstract ValueTask<int> WriteAsync(PipeWriter writer, T frame);
+        private async ValueTask<int> WriteAsyncSlowPath(T frame)
+        {
+            await _semaphore.WaitAsync();
+            try
+            {
+                var writer = _writer ?? throw new ObjectDisposedException(ToString());
+                await WriteAsync(writer, frame);
+                return -1;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
 
+        protected abstract ValueTask<FlushResult> WriteAsync(PipeWriter writer, T frame);
         public void Dispose()
         {
             GC.SuppressFinalize(this);
+            
             var writer = Interlocked.Exchange(ref _writer, null);
             if (writer == null) return;
             try { writer.Complete(); } catch { }
             try { writer.CancelPendingFlush(); } catch { }
+            _semaphore.Dispose();
         }
     }
 }

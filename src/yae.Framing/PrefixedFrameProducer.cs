@@ -11,7 +11,7 @@ namespace yae.Framing
         public PrefixedFrameProducer(PipeWriter writer, IPrefixedFrameEncoder<T> encoder) : base(writer) 
             => _encoder = encoder;
 
-        protected override ValueTask<int> WriteAsync(PipeWriter writer, T frame)
+        protected override ValueTask<FlushResult> WriteAsync(PipeWriter writer, T frame)
         {
             var headerLen = _encoder.GetHeaderLength(frame);
             var headerSpan = writer.GetSpan(headerLen);
@@ -20,8 +20,8 @@ namespace yae.Framing
 
             var payload = _encoder.GetPayload(frame);
             return payload.IsEmpty 
-                ? new ValueTask<int>(headerLen) 
-                : AwaitAndWrite(writer, headerLen, payload);
+                ? default //returns IsCompletedSuccessfully!
+                : writer.WriteAsync(payload) /*AwaitAndWrite(writer, headerLen, payload)*/;
         }
 
         private static async ValueTask<int> AwaitAndWrite(PipeWriter writer, int headerLen, ReadOnlyMemory<byte> payload)
