@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -14,15 +15,12 @@ namespace yae.Framing
     {
         private PipeReader _reader;
         private readonly IFrameDecoder<T> _decoder;
-        private CancellationTokenSource _cts;
-        internal bool IsProgressing { get; private set; }
 
 
         internal PipeFrameConsumer(PipeReader reader, IFrameDecoder<T> decoder)
         {
             _reader = reader;
             _decoder = decoder;
-            IsProgressing = false;
         }
 
         /// <summary>
@@ -33,95 +31,24 @@ namespace yae.Framing
         /// <exception cref="OperationCanceledException">Thrown on cancellation</exception>
         public async IAsyncEnumerable<T> ConsumeAsync([EnumeratorCancellation] CancellationToken token = default)
         {
-            //todo: better try-catch style!
-            var reader = _reader ?? throw new ObjectDisposedException(ToString()); //to prevent dispose!
-            _cts = new CancellationTokenSource();
-            while (true)
+            var reader = _reader ?? throw new ObjectDisposedException(ToString());
+
+            await foreach (var buffer in reader.ToAsyncEnumerable(token))
             {
-                /*ReadResult readResult;
-                try
+                var bufferLocal = buffer; //we can't update result of buffer
+
+                while (_decoder.TryParseFrame(bufferLocal, out var frame, out var consumedTo))
                 {
-                    if (!(IsProgressing && reader.TryRead(out readResult)))
-                        readResult = await reader.ReadAsync(token);
-                }
-                catch
-                {
-                    break;
-                }*/
-                /*ReadResult readResult;
-                try
-                {
-                    readResult = await reader.ReadAsync(token);
-                }
-                catch (Exception ex)
-                {
-                    try
-                    {
-                        Close(ex);
-                    }
-                    catch
-                    {
-                    }
-
-                    break;
-                }
-
-
-                if (readResult.IsCanceled)
-                    break; //try to handle it btw
-
-                var buffer = readResult.Buffer;
-
-                IsProgressing = false;
-
-                while (_decoder.TryParseFrame(buffer, out var frame, out var consumedTo))
-                {
-                    IsProgressing = true;
                     yield return frame;
-                    buffer = buffer.Slice(consumedTo);
+                    bufferLocal = bufferLocal.Slice(consumedTo);
                 }
 
-                reader.AdvanceTo(buffer.Start, buffer.End);
-
-                if (!IsProgressing && readResult.IsCompleted) break;*/
-
-                var buffer = await GetBuffer(_cts);
-                IsProgressing = false;
-
-                while (_decoder.TryParseFrame(buffer, out var frame, out var consumedTo))
-                {
-                    IsProgressing = true;
-                    yield return frame;
-                    buffer = buffer.Slice(consumedTo);
-                }
-
-                reader.AdvanceTo(buffer.Start, buffer.End);
-
-
+                reader.AdvanceTo(bufferLocal.Start, bufferLocal.End);
             }
+
+            Close();
         }
 
-        public async ValueTask<ReadOnlySequence<byte>> GetBuffer(CancellationTokenSource cts)
-        {
-            try
-            {
-                var readResult = await _reader.ReadAsync(cts.Token);
-                if (readResult.IsCanceled)
-                {
-                    cts.Cancel();
-                    return default;
-                }
-
-                var buffer = readResult.Buffer;
-                if (!IsProgressing && readResult.IsCompleted) cts.Cancel(false);
-                return buffer;
-            }
-            catch (Exception ex)
-            {
-                Close(ex);
-                return default;
-            }
-        }
 
         public void Close(Exception ex = null)
         {
@@ -134,5 +61,11 @@ namespace yae.Framing
         }
 
         public void Dispose() => Close();
+    }
+
+    public readonly struct ReadOperation
+    {
+        public ReadResult ReadResult { get; }
+
     }
 }

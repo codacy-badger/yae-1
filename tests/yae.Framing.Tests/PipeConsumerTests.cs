@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 using yae.Framing;
@@ -62,6 +63,8 @@ namespace yae.Framing.Tests
 
         }*/
     }
+
+    
     public class PipeConsumerTests
     {
         private readonly ITestOutputHelper _output;
@@ -86,7 +89,7 @@ namespace yae.Framing.Tests
             });
         }*/
 
-        [Fact]
+        /*[Fact]
         public async Task ShouldComplete_OnWriterComplete()
         {
             var (consumer, writer) = GetConsumer();
@@ -96,21 +99,34 @@ namespace yae.Framing.Tests
         }
 
         [Fact]
-        public void DefaultState()
+        public void TestClose()
         {
             var (consumer, _) = GetConsumer();
-            Assert.False(consumer.IsProgressing);
+            consumer.Close();
         }
 
         [Fact]
-        public async Task ShouldComplete_OnReaderComplete()
+        public async Task ShouldThrowOnClose()
+        {
+            var (consumer, writer) = GetConsumer();
+            var enumerator = consumer.ConsumeAsync().GetAsyncEnumerator();
+            var moveNextTask = enumerator.MoveNextAsync();
+            consumer.Close();
+            //await moveNextTask;
+        }
+
+        [Fact]
+        public async Task ShouldThrow_OnReaderComplete()
         {
             var (consumer, _) = GetConsumer();
             var enumerator = consumer.ConsumeAsync().GetAsyncEnumerator();
 
             var moveNext = enumerator.MoveNextAsync();
-            consumer.Dispose();
-            Assert.False(await moveNext);
+            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+            {
+                consumer.Dispose();
+                await moveNext;
+            });
         }
 
         [Fact]
@@ -147,18 +163,9 @@ namespace yae.Framing.Tests
                 }
             });
         }
-
+        */
         [Fact]
-        public async Task ShouldThrowWhenConsumeAndDispose()
-        {
-            var (consumer, _) = GetConsumer();
-            var enumerator = consumer.ConsumeAsync().GetAsyncEnumerator();
-            var moveNextTask = enumerator.MoveNextAsync();
-            consumer.Dispose();
-            Assert.False(await moveNextTask);
-        }
-        [Fact]
-        public async Task ShouldConsume()
+        public async Task ShouldConsumeOneFrame()
         {
             var (consumer, writer) = GetConsumer();
             await writer.WriteAsync(new byte[256]);
@@ -168,11 +175,32 @@ namespace yae.Framing.Tests
                 break;
             }
         }
+        [Fact]
+        public async Task ShouldConsume1024Frame()
+        {
+            var (consumer, writer) = GetConsumer();
+            var enumerator = consumer.ConsumeAsync().GetAsyncEnumerator();
+
+            for (var i = 0; i < 1024; i++)
+            {
+                await writer.WriteAsync(new byte[256]); //produces it
+                await enumerator.MoveNextAsync(); //consumes it
+                Assert.Equal(256, enumerator.Current.Length);
+            }
+            
+        }
+
         private static (PipeFrameConsumer<Memory<byte>>, PipeWriter) GetConsumer()
         {
             var pipe = new Pipe();
             return (pipe.Reader.AsFrameConsumer(new Decoder()) as PipeFrameConsumer<Memory<byte>>,
                 pipe.Writer);
+        }
+
+        private static (PipeFrameConsumer<Memory<byte>>, PipeReader) GetConsumerAsReader()
+        {
+            var pipe = new Pipe();
+            return (pipe.Reader.AsFrameConsumer(new Decoder()) as PipeFrameConsumer<Memory<byte>>, pipe.Reader);
         }
     }
 }

@@ -17,21 +17,9 @@ namespace yae.Framing
             _semaphore = new SemaphoreSlim(1);
         }
 
+        //todo: do we need *really* to return the bytes written?
         public ValueTask<int> ProduceAsync(T frame)
         {
-            async ValueTask<int> AwaitFlushAndRelease(ValueTask<FlushResult> flush)
-            {
-                try
-                {
-                    await flush;
-                    return 0;
-                }
-                finally
-                {
-                    _semaphore.Release();
-                }
-            }
-
             if (!_semaphore.Wait(0))
             {
                 return WriteAsyncSlowPath(frame);
@@ -52,6 +40,19 @@ namespace yae.Framing
             }
         }
 
+        private async ValueTask<int> AwaitFlushAndRelease(ValueTask<FlushResult> flush)
+        {
+            try
+            {
+                await flush;
+                return 0;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         private async ValueTask<int> WriteAsyncSlowPath(T frame)
         {
             await _semaphore.WaitAsync();
@@ -59,7 +60,7 @@ namespace yae.Framing
             {
                 var writer = _writer ?? throw new ObjectDisposedException(ToString());
                 await WriteAsync(writer, frame);
-                return -1;
+                return 0;
             }
             finally
             {

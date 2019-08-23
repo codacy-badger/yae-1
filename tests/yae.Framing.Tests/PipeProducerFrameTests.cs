@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace yae.Framing.Tests
 {
@@ -35,14 +37,24 @@ namespace yae.Framing.Tests
             return writer.WriteAsync(frame.Data);
         }
 
-        public TestPipeFrameProducer(PipeWriter writer) : base(writer)
-        {
+        private readonly ITestOutputHelper _output;
 
+        public TestPipeFrameProducer(PipeWriter writer, ITestOutputHelper output) : base(writer)
+        {
         }
+
+
     }
 
     public class PipeProducerFrameTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public PipeProducerFrameTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [Fact]
         public void ValueTaskDefault()
         {
@@ -60,7 +72,6 @@ namespace yae.Framing.Tests
             producer._semaphore.Release(); //released...
             var result = await produceTask;
             Assert.True(produceTask.IsCompleted);
-            Assert.Equal(-1, result); //-1 means slowPath
         }
 
         private Frame GetFrame()
@@ -70,7 +81,7 @@ namespace yae.Framing.Tests
         private (TestPipeFrameProducer producer, PipeReader reader) GetProducer()
         {
             var pipe = new Pipe();
-            return (new TestPipeFrameProducer(pipe.Writer), pipe.Reader);
+            return (new TestPipeFrameProducer(pipe.Writer, _output), pipe.Reader);
 
         }
     }
