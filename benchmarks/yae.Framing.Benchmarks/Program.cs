@@ -26,50 +26,6 @@ namespace yae.Framing.Benchmarks
         public Memory<byte> Data { get; set; }
     }
 
-    class Encoder : IFrameEncoder<Frame>
-    {
-        public int GetHeaderLength(Frame frame) => 4;
-        public ReadOnlyMemory<byte> GetPayload(Frame frame) => frame.Data;
-
-        public void WriteHeader(Span<byte> span, Frame frame)
-        {
-            BinaryPrimitives.WriteInt32LittleEndian(span, frame.Data.Length);
-        }
-    }
-    class Decoder : IFrameDecoder<Frame>
-    {
-        private byte[] _data;
-        public Decoder()
-        {
-            _data = new byte[1024];
-        }
-        public bool TryParseFrame(ReadOnlySequence<byte> buffer, out Frame frame, out SequencePosition consumedTo)
-        {
-            var reader = new SequenceReader<byte>(buffer);
-
-            if(!reader.TryReadLittleEndian(out int length))
-            {
-                frame = default;
-                consumedTo = default;
-                return false;
-            }
-
-            if(reader.Remaining < length)
-            {
-                frame = default;
-                consumedTo = default;
-                return false;
-            }
-
-            frame = new Frame
-            {
-                Data = _data
-            };
-
-            consumedTo = reader.Sequence.GetPosition(4 + length);
-            return true;
-        }
-    }
 
     //[ClrJob, CoreJob, MemoryDiagnoser, WarmupCount(2), IterationCount(10)]
     [CoreJob, MemoryDiagnoser, WarmupCount(2), IterationCount(1)]

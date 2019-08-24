@@ -13,8 +13,6 @@ namespace yae.Framing
 
         public static (IFrameConsumer<T>, IFrameProducer<T>) AsProducerConsumer<T>(this IDuplexPipe pipe, 
             IFrameDecoder<T> decoder, IFrameEncoder<T> encoder)
-        {
-            return (AsFrameConsumer(pipe.Input, decoder), AsFrameProducer(pipe.Output, encoder));
-        }
+            => (AsFrameConsumer(pipe.Input, decoder), AsFrameProducer(pipe.Output, encoder));
     }
 }

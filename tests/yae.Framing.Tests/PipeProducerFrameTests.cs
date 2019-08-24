@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace yae.Framing.Tests
 {
+    //todo: use headerFrame everywhere!
     class Frame
     {
         public Memory<byte> Data { get; set; }
@@ -19,9 +20,9 @@ namespace yae.Framing.Tests
 
     class FrameEncoder : IFrameEncoder<Frame>
     {
-        public ValueTask<FlushResult> WriteAsync(PipeWriter writer, Frame frameWrapper)
+        public ValueTask<FlushResult> WriteAsync(PipeWriter writer, Frame outputFrame)
         {
-            return writer.WriteAsync(frameWrapper.Data);
+            return writer.WriteAsync(outputFrame.Data);
         }
     }
 

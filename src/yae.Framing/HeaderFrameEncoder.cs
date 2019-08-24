@@ -4,22 +4,22 @@ using System.Threading.Tasks;
 
 namespace yae.Framing
 {
-    public abstract class HeaderFrameEncoder<TFrame> : IFrameEncoder<IFrameWrapper<TFrame>>
+    public abstract class HeaderFrameEncoder<TFrame> : IFrameEncoder<OutputFrame<TFrame>>
     {
-        public  ValueTask<FlushResult> WriteAsync(PipeWriter writer, IFrameWrapper<TFrame> frameWrapper)
+        public  ValueTask<FlushResult> WriteAsync(PipeWriter writer, OutputFrame<TFrame> outputFrame)
         {
-            var headerLen = GetHeaderLength(frameWrapper.Frame);
+            var headerLen = GetHeaderLength(outputFrame.Frame);
             var headerSpan = writer.GetSpan(headerLen);
-            WriteHeader(headerSpan, frameWrapper.Frame);
+            WriteHeader(headerSpan, outputFrame);
             writer.Advance(headerLen);
 
-            var payload = frameWrapper.MemoryPayload;
-            return payload.IsEmpty
-                ? default
-                : writer.WriteAsync(payload);
+            var payload = outputFrame.Payload;
+            return payload.IsEmpty ? default : writer.WriteAsync(payload);
         }
 
         protected abstract int GetHeaderLength(TFrame frame);
-        protected abstract void WriteHeader(Span<byte> dst, TFrame frame);
+        protected abstract void WriteHeader(Span<byte> dst, OutputFrame<TFrame> frame);
+
+        //public OutputFrame<TFrame> GetOutputFrame(TFrame frame, ReadOnlyMemory<>) //todo: may we can add a "pooling fashion"
     }
 }

@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{363EA382-9301-4497-B3EF-2036C7E5C79F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.Sandbox", "yae.Sandbox\yae.Sandbox.csproj", "{13E8CF6A-B00D-4BF2-8CD0-A0024E17C3CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Sandbox", "yae.Sandbox\yae.Sandbox.csproj", "{13E8CF6A-B00D-4BF2-8CD0-A0024E17C3CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
