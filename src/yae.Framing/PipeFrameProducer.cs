@@ -1,36 +1,35 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
-using Nito.AsyncEx;
+//using Nito.AsyncEx;
 
 namespace yae.Framing
 {
-    public abstract class PipeFrameProducer<T> : IFrameProducer<T>
+    internal sealed class PipeFrameProducer<T> : IFrameProducer<T>
     {
         private PipeWriter _writer;
-        internal readonly SemaphoreSlim _semaphore;
+        private readonly SemaphoreSlim _semaphore;
+        private readonly IFrameEncoder<T> _encoder;
 
-        protected PipeFrameProducer(PipeWriter writer)
+        public PipeFrameProducer(PipeWriter writer, IFrameEncoder<T> encoder)
         {
             _writer = writer;
+            _encoder = encoder;
             _semaphore = new SemaphoreSlim(1);
         }
 
-        //todo: do we need *really* to return the bytes written?
-        public ValueTask<int> ProduceAsync(T frame)
+        public ValueTask ProduceAsync(T frame)
         {
-            if (!_semaphore.Wait(0))
-            {
-                return WriteAsyncSlowPath(frame);
-            }
+            if (!_semaphore.Wait(0)) return WriteAsyncSlowPath(frame);
 
             var release = true;
             try
             {
                 var writer = _writer ?? throw new ObjectDisposedException(ToString());
-                var write = WriteAsync(writer, frame);
-                if (write.IsCompletedSuccessfully) return new ValueTask<int>(0);
+                var write = _encoder.WriteAsync(writer, frame);
+                if (write.IsCompletedSuccessfully) return default;
                 release = false;
                 return AwaitFlushAndRelease(write);
             }
@@ -40,12 +39,17 @@ namespace yae.Framing
             }
         }
 
-        private async ValueTask<int> AwaitFlushAndRelease(ValueTask<FlushResult> flush)
+        public async ValueTask ProduceAsync(IEnumerable<T> frames)
         {
+            var writer = _writer ?? throw new ObjectDisposedException(ToString());
+
+            await _semaphore.WaitAsync();
             try
             {
-                await flush;
-                return 0;
+                foreach (var frame in frames)
+                {
+                    await _encoder.WriteAsync(writer, frame);
+                }
             }
             finally
             {
@@ -53,14 +57,44 @@ namespace yae.Framing
             }
         }
 
-        private async ValueTask<int> WriteAsyncSlowPath(T frame)
+        //todo: can probably refactor both produces
+        public async ValueTask ProduceAsync(IAsyncEnumerable<T> framesAsync)
+        {
+            var writer = _writer ?? throw new ObjectDisposedException(ToString());
+
+            await _semaphore.WaitAsync();
+            try
+            {
+                await foreach (var frame in framesAsync)
+                {
+                    await _encoder.WriteAsync(writer, frame);
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        private async ValueTask AwaitFlushAndRelease(ValueTask<FlushResult> flush)
+        {
+            try
+            {
+                await flush;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        private async ValueTask WriteAsyncSlowPath(T frame)
         {
             await _semaphore.WaitAsync();
             try
             {
                 var writer = _writer ?? throw new ObjectDisposedException(ToString());
-                await WriteAsync(writer, frame);
-                return 0;
+                await _encoder.WriteAsync(writer, frame);
             }
             finally
             {
@@ -68,13 +102,12 @@ namespace yae.Framing
             }
         }
 
-        protected abstract ValueTask<FlushResult> WriteAsync(PipeWriter writer, T frame);
         public void Dispose()
         {
             GC.SuppressFinalize(this);
             
             var writer = Interlocked.Exchange(ref _writer, null);
-            if (writer == null) return;
+            if (writer == null) throw new ObjectDisposedException(ToString());
             try { writer.Complete(); } catch { }
             try { writer.CancelPendingFlush(); } catch { }
             _semaphore.Dispose();

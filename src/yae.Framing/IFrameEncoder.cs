@@ -1,15 +1,11 @@
 ﻿using System;
+using System.IO.Pipelines;
+using System.Threading.Tasks;
 
 namespace yae.Framing
 {
-    public interface IFrameEncoder<T>
+    public interface IFrameEncoder<in TFrame>
     {
-        ReadOnlyMemory<byte> GetPayload(T frame);
-    }
-
-    public interface IPrefixedFrameEncoder<T> : IFrameEncoder<T>
-    {
-        int GetHeaderLength(T frame);
-        void WriteHeader(Span<byte> span, T frame);
+        ValueTask<FlushResult> WriteAsync(PipeWriter writer, TFrame frameWrapper);
     }
 }

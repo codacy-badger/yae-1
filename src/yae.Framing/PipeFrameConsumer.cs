@@ -11,13 +11,13 @@ using System.Threading.Tasks;
 [assembly: InternalsVisibleTo("yae.Framing.Tests")]
 namespace yae.Framing
 {
-    internal class PipeFrameConsumer<T> : IFrameConsumer<T>
+    internal sealed class PipeFrameConsumer<T> : IFrameConsumer<T>
     {
         private PipeReader _reader;
         private readonly IFrameDecoder<T> _decoder;
 
 
-        internal PipeFrameConsumer(PipeReader reader, IFrameDecoder<T> decoder)
+        public PipeFrameConsumer(PipeReader reader, IFrameDecoder<T> decoder)
         {
             _reader = reader;
             _decoder = decoder;
@@ -28,7 +28,6 @@ namespace yae.Framing
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        /// <exception cref="OperationCanceledException">Thrown on cancellation</exception>
         public async IAsyncEnumerable<T> ConsumeAsync([EnumeratorCancellation] CancellationToken token = default)
         {
             var reader = _reader ?? throw new ObjectDisposedException(ToString());
@@ -46,7 +45,7 @@ namespace yae.Framing
                 reader.AdvanceTo(bufferLocal.Start, bufferLocal.End);
             }
 
-            Close();
+            //Close(); //todo: should we auto-close?
         }
 
 
@@ -61,11 +60,5 @@ namespace yae.Framing
         }
 
         public void Dispose() => Close();
-    }
-
-    public readonly struct ReadOperation
-    {
-        public ReadResult ReadResult { get; }
-
     }
 }

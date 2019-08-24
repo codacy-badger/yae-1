@@ -8,36 +8,44 @@ namespace yae.Sandbox
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            var lr = new LoginRequest();
-            var obj = (object) lr;
-            int n = int.MaxValue;
-
-            Stopwatch sw = Stopwatch.StartNew();
-            for (int i = 0; i < n; i++)
+            foreach (var obj in GetEnumerable())
             {
-                PassObj(lr);
+                PrintObj(obj);
             }
 
-            sw.Stop();
-
-            Console.WriteLine($"Pass raw = {sw.ElapsedMilliseconds} ms");
-            sw.Restart();
-            for (int i = 0; i < n; i++)
+            await foreach (var obj in GetAsyncEnumerable())
             {
-                PassObj(obj);
+                PrintObj(obj);
             }
-
-            sw.Stop();
-            Console.WriteLine($"Pass as object = {sw.ElapsedMilliseconds} ms");
             Console.ReadLine();
         }
 
-        public static T PassObj<T>(T obj)
+        public static void PrintObj<T>(T obj)
         {
-            return obj;
-            //Console.WriteLine(obj.GetType());
+            Console.WriteLine(typeof(T));
+        }
+
+        public static IEnumerable<object> GetEnumerable()
+        {
+            yield return new LoginRequest();
+            yield return new object();
+            yield return AsObject();
+        }
+        public static async IAsyncEnumerable<object> GetAsyncEnumerable()
+        {
+            foreach (var obj in GetEnumerable())
+            {
+                yield return obj;
+                await Task.Delay(0);
+            }
+
+        }
+
+        public static object AsObject()
+        {
+            return (object)new LoginRequest(); //force cast, should it helps ? no...
         }
     }
 

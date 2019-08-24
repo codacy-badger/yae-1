@@ -32,39 +32,7 @@ namespace yae.Framing.Tests
         }
     }
 
-    public class FrameDecoderExtensionsTests
-    {
-        /*[Theory]
-        [InlineData(1)]
-        [InlineData(8)]
-        [InlineData(32)]
-        [InlineData(128)]
-        [InlineData(1024)]
-        public void ShouldProcessFrames(int n)
-        {
-            var decoder = new Decoder();
-            var holder = GetBuffer(n);
-            var processed = 0;
-            var enumerable = decoder.ToEnumerable(holder);
-            foreach (var frame in enumerable)
-            {
-                Assert.Equal(256, frame.Length);
-                processed++;
-            }
-            Assert.Equal(0, holder.Buffer.Length);
-            Assert.Equal(n, processed);
-        }
 
-        private static BufferHolder GetBuffer(int n = 1)
-        {
-            var array = new byte[n * 256];
-            var holder = new BufferHolder {Buffer = new ReadOnlySequence<byte>(array)};
-            return holder;
-
-        }*/
-    }
-
-    
     public class PipeConsumerTests
     {
         private readonly ITestOutputHelper _output;
@@ -74,96 +42,22 @@ namespace yae.Framing.Tests
             _output = output;
         }
 
-        /*[Fact]
-        public async Task ShouldThrowOnCancel()
-        {
-            var (consumer, _) = GetConsumer();
-            using var cts = new CancellationTokenSource();
-
-            var enumerator = consumer.ConsumeAsync(cts.Token).GetAsyncEnumerator();
-            cts.Cancel();
-            await Assert.ThrowsAsync<OperationCanceledException>(async () =>
-            {
-                var canMove = await enumerator.MoveNextAsync();
-                Assert.False(canMove);
-            });
-        }*/
-
-        /*[Fact]
-        public async Task ShouldComplete_OnWriterComplete()
-        {
-            var (consumer, writer) = GetConsumer();
-            var enumerable = consumer.ConsumeAsync();
-            writer.Complete();
-            Assert.False(await enumerable.GetAsyncEnumerator().MoveNextAsync());
-        }
-
         [Fact]
-        public void TestClose()
+        public void Dispose_ShouldDispose()
         {
             var (consumer, _) = GetConsumer();
             consumer.Close();
+
         }
 
         [Fact]
-        public async Task ShouldThrowOnClose()
-        {
-            var (consumer, writer) = GetConsumer();
-            var enumerator = consumer.ConsumeAsync().GetAsyncEnumerator();
-            var moveNextTask = enumerator.MoveNextAsync();
-            consumer.Close();
-            //await moveNextTask;
-        }
-
-        [Fact]
-        public async Task ShouldThrow_OnReaderComplete()
-        {
-            var (consumer, _) = GetConsumer();
-            var enumerator = consumer.ConsumeAsync().GetAsyncEnumerator();
-
-            var moveNext = enumerator.MoveNextAsync();
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            {
-                consumer.Dispose();
-                await moveNext;
-            });
-        }
-
-        [Fact]
-        public void ShouldDispose()
-        {
-            var (consumer, _) = GetConsumer();
-            consumer.Dispose();
-        }
-
-        [Fact]
-        public void ShouldClose()
-        {
-            var (consumer, _) = GetConsumer();
-            consumer.Close();
-        }
-
-        [Fact]
-        public void DisposeTwiceThrow()
+        public void Dispose_ShouldThrow()
         {
             var (consumer, _) = GetConsumer();
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(consumer.Dispose);
-        }
 
-        [Fact]
-        public async Task ShouldThrowWhenDisposed()
-        {
-            var (consumer, _) = GetConsumer();
-            consumer.Dispose();
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            {
-                await foreach (var _ in consumer.ConsumeAsync())
-                {
-                }
-            });
         }
-        */
         [Fact]
         public async Task ShouldConsumeOneFrame()
         {
