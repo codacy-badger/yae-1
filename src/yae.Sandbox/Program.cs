@@ -2,22 +2,50 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace yae.Sandbox
 {
+    public interface INetworkMessage
+    {
+
+    }
+
+    public class LoginMessage : INetworkMessage
+    {
+    }
+
+    public class AnotherMessage : INetworkMessage
+    {
+
+    }
+
+    public class Test
+    {
+        public async IAsyncEnumerable<INetworkMessage> Enumerable()
+        {
+            //yield return new MyAsyncEnumerable<INetworkMessage>();
+            yield return new LoginMessage();
+            yield return new AnotherMessage();
+        }
+    }
+
+    public static class NetworkExtensions
+    {
+        public static void Serialize<T>(this T msg) where T : INetworkMessage
+        {
+            Console.WriteLine(typeof(T));
+        }
+    }
     class Program
     {
         static async Task Main(string[] args)
         {
-            foreach (var obj in GetEnumerable())
-            {
-                PrintObj(obj);
-            }
 
-            await foreach (var obj in GetAsyncEnumerable())
+            await foreach (var obj in new Test().Enumerable())
             {
-                PrintObj(obj);
+                var type = obj.GetType(); //we have the type, do something with it
             }
             Console.ReadLine();
         }

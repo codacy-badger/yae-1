@@ -3,10 +3,47 @@ using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
+using yae.Async;
+
 //using Nito.AsyncEx;
 
 namespace yae.Framing
 {
+    public class ManageLock : AsyncOperation
+    {
+        private SemaphoreSlim _semaphore;
+
+        public ManageLock(SemaphoreSlim semaphore) => _semaphore = semaphore;
+
+        protected override ValueTask CanCompleteSync()
+        {
+            return _semaphore.Wait(0) ? default : new ValueTask(_semaphore.WaitAsync());
+        }
+
+        public override void OnFinally()
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public class WriteOperation<T> : AsyncOperation<FlushResult>
+    {
+        private readonly PipeWriter _writer;
+        private readonly IFrameEncoder<T> _encoder;
+        private readonly T _frame;
+
+        public WriteOperation(PipeWriter writer, IFrameEncoder<T> encoder, T frame)
+        {
+            _writer = writer;
+            _encoder = encoder;
+            _frame = frame;
+        }
+        protected override ValueTask<FlushResult> CanCompleteSync()
+        {
+            return _encoder.WriteAsync(_writer, _frame);
+        }
+    }
+
     internal sealed class PipeFrameProducer<T> : IFrameProducer<T>
     {
         private PipeWriter _writer;
@@ -22,6 +59,45 @@ namespace yae.Framing
 
         public ValueTask ProduceAsync(T frame)
         {
+            static async ValueTask Await(ValueTask<FlushResult> flush)
+            {
+                await flush;
+            }
+
+            var op1 = new ManageLock(_semaphore);
+            var op2 = new WriteOperation<T>(_writer, _encoder, frame);
+            var task = op1.MergeWith(op2);
+            return task.IsCompletedSuccessfully ? default : Await(task);
+        }
+
+        /*public ValueTask ProduceAsyncV2(T frame)
+        {
+            async ValueTask AwaitFlushAndRelease(ValueTask<FlushResult> flush)
+            {
+                try
+                {
+                    await flush;
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+
+            async ValueTask WriteAsyncSlowPath(T frame)
+            {
+                await _semaphore.WaitAsync();
+                try
+                {
+                    var writer = _writer ?? throw new ObjectDisposedException(ToString());
+                    await _encoder.WriteAsync(writer, frame);
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+
             if (!_semaphore.Wait(0)) return WriteAsyncSlowPath(frame);
 
             var release = true;
@@ -37,7 +113,7 @@ namespace yae.Framing
             {
                 if (release) _semaphore.Release();
             }
-        }
+        }*/
 
         public async ValueTask ProduceAsync(IEnumerable<T> frames)
         {
@@ -69,32 +145,6 @@ namespace yae.Framing
                 {
                     await _encoder.WriteAsync(writer, frame);
                 }
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        private async ValueTask AwaitFlushAndRelease(ValueTask<FlushResult> flush)
-        {
-            try
-            {
-                await flush;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        private async ValueTask WriteAsyncSlowPath(T frame)
-        {
-            await _semaphore.WaitAsync();
-            try
-            {
-                var writer = _writer ?? throw new ObjectDisposedException(ToString());
-                await _encoder.WriteAsync(writer, frame);
             }
             finally
             {
