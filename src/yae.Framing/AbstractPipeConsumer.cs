@@ -3,19 +3,12 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using PooledAwait;
 
 namespace yae.Framing
 {
-    public class PipeConsumer : AbstractPipeConsumer
-    {
-        public PipeConsumer(PipeReader reader) : base(reader) { }
-        protected override ValueTask<ReadResult> ReadAsync() => Reader.ReadAsync();
-    }
-
     public abstract class AbstractPipeConsumer : IFrameConsumer<ReadOnlySequence<byte>>
     {
         protected PipeReader Reader;

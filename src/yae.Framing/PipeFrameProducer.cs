@@ -5,18 +5,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using PooledAwait;
 
-//using Nito.AsyncEx;
-
 namespace yae.Framing
 {
-
     internal sealed class PipeFrameProducer<T> : IFrameProducer<T>
     {
         private PipeWriter _writer;
         private readonly SemaphoreSlim _semaphore;
-        private readonly IFrameEncoder<T> _encoder;
+        private readonly PipeFrameEncoder<T> _encoder;
 
-        public PipeFrameProducer(PipeWriter writer, IFrameEncoder<T> encoder)
+        public PipeFrameProducer(PipeWriter writer, PipeFrameEncoder<T> encoder)
         {
             _writer = writer;
             _encoder = encoder;

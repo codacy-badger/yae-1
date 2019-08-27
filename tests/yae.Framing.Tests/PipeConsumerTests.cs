@@ -10,29 +10,10 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 using yae.Framing;
+using yae.Framing.Sample.BasicFrame;
 
 namespace yae.Framing.Tests
 {
-    class Decoder : IFrameDecoder<Memory<byte>>
-    {
-        public bool TryParseFrame(ReadOnlySequence<byte> buffer, out Memory<byte> frame, out SequencePosition consumedTo)
-        {
-            if(buffer.Length < 256)
-            {
-                frame = default;
-                consumedTo = default;
-                return false;
-            }
-
-            var array = new byte[256];
-            buffer.Slice(0, 256).CopyTo(array);
-            frame = array;
-            consumedTo = buffer.GetPosition(256);
-            return true;
-        }
-    }
-
-
     public class PipeConsumerTests
     {
         private readonly ITestOutputHelper _output;
@@ -62,10 +43,14 @@ namespace yae.Framing.Tests
         public async Task ShouldConsumeOneFrame()
         {
             var (consumer, writer) = GetConsumer();
-            await writer.WriteAsync(new byte[256]);
-            await foreach (var frame in consumer.ConsumeAsync())
+            var frame = new BasicFrame {MessageId = 4, Data = new byte[256]};
+
+            await new BasicFrameEncoder().WriteAsync(writer, frame);
+
+            await foreach (var frm in consumer.ConsumeAsync())
             {
-                Assert.Equal(256, frame.Length);
+                Assert.Equal(4, frm.MessageId);
+                Assert.Equal(256, frm.Data.Length);
                 break;
             }
         }
@@ -77,24 +62,27 @@ namespace yae.Framing.Tests
 
             for (var i = 0; i < 1024; i++)
             {
-                await writer.WriteAsync(new byte[256]); //produces it
+                var frame = new BasicFrame { MessageId = 4, Data = new byte[256] };
+
+                await new BasicFrameEncoder().WriteAsync(writer, frame);
                 await enumerator.MoveNextAsync(); //consumes it
-                Assert.Equal(256, enumerator.Current.Length);
+                var frm = enumerator.Current;
+                Assert.Equal(4, frm.MessageId);
+                Assert.Equal(256, frm.Data.Length);
             }
             
         }
-
-        private static (PipeFrameConsumer<Memory<byte>>, PipeWriter) GetConsumer()
+        private static (PipeFrameConsumer<BasicFrame>, PipeWriter) GetConsumer()
         {
             var pipe = new Pipe();
-            return (pipe.Reader.AsFrameConsumer(new Decoder()) as PipeFrameConsumer<Memory<byte>>,
+            return (pipe.Reader.AsPipeFrameConsumer(new BasicFrameDecoder()) as PipeFrameConsumer<BasicFrame>,
                 pipe.Writer);
         }
 
-        private static (PipeFrameConsumer<Memory<byte>>, PipeReader) GetConsumerAsReader()
+        private static (PipeFrameConsumer<BasicFrame>, PipeReader) GetConsumerAsReader()
         {
             var pipe = new Pipe();
-            return (pipe.Reader.AsFrameConsumer(new Decoder()) as PipeFrameConsumer<Memory<byte>>, pipe.Reader);
+            return (pipe.Reader.AsPipeFrameConsumer(new BasicFrameDecoder()) as PipeFrameConsumer<BasicFrame>, pipe.Reader);
         }
     }
 }

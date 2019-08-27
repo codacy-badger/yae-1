@@ -1,5 +1,4 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Text;
@@ -9,22 +8,7 @@ using Xunit;
 
 namespace yae.Framing.Tests
 {
-    class TestBasePipeFrameConsumer : AbstractPipeConsumer
-    {
-        public ReadResult Result { get; set; }
-        public bool ShouldThrow { get; set; } = false;
-
-        public TestBasePipeFrameConsumer(PipeReader reader) : base(reader)
-        {
-        }
-
-        protected override ValueTask<ReadResult> ReadAsync()
-        {
-            if(ShouldThrow) throw new Exception("Exception from tests");
-            return new ValueTask<ReadResult>(Result);
-        }
-    }
-    public class MyPipeReaderTests
+    public class AbstractPipeConsumerTests
     {
         [Fact]
         public async Task ReadResult_BreakLoopOnCancel()

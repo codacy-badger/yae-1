@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\samples\yae.Framing.Sample\yae.Framing.Sample.csproj" />
     <ProjectReference Include="..\..\src\yae.Framing\yae.Framing.csproj" />
   </ItemGroup>
 

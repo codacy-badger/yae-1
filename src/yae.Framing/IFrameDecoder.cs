@@ -7,6 +7,6 @@ namespace yae.Framing
 {
     public interface IFrameDecoder<TFrame>
     {
-        bool TryParseFrame(ReadOnlySequence<byte> buffer, out TFrame frame, out SequencePosition consumedTo);
+        bool TryParseFrame(SequenceReader<byte> reader, out TFrame frame, out SequencePosition consumedTo);
     }
 }

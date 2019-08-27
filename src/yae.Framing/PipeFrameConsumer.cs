@@ -11,30 +11,23 @@ using System.Threading.Tasks;
 [assembly: InternalsVisibleTo("yae.Framing.Tests")]
 namespace yae.Framing
 {
-    internal sealed class PipeFrameConsumer<T> : IFrameConsumer<T>
+    internal sealed class PipeFrameConsumer<T> : PipeConsumer, IFrameConsumer<T>
     {
-        private PipeReader _reader;
+        private readonly PipeReader _reader;
         private readonly IFrameDecoder<T> _decoder;
-        private readonly AbstractPipeConsumer _pipeConsumer;
 
 
-        public PipeFrameConsumer(PipeReader reader, IFrameDecoder<T> decoder)
+        public PipeFrameConsumer(PipeReader reader, IFrameDecoder<T> decoder) : base(reader)
         {
             _reader = reader;
-            _pipeConsumer = new PipeConsumer(reader);
             _decoder = decoder;
         }
 
-        /// <summary>
-        /// Consumes asynchronously the pipe and returns frames.
-        /// Automatically call dispose at the end of the enumerable.
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public async IAsyncEnumerable<T> ConsumeAsync([EnumeratorCancellation] CancellationToken token = default)
+        public new async IAsyncEnumerable<T> ConsumeAsync([EnumeratorCancellation] CancellationToken token = default)
         {
-            await foreach (var buffer in _pipeConsumer.ConsumeAsync(token))
+            await foreach (var buffer in base.ConsumeAsync(token))
             {
+                /*var reader = new SequenceReader<byte>(buffer);
                 var bufferLocal = buffer; //we can't update result of buffer
 
                 while (_decoder.TryParseFrame(bufferLocal, out var frame, out var consumedTo))
@@ -43,11 +36,23 @@ namespace yae.Framing
                     bufferLocal = bufferLocal.Slice(consumedTo);
                 }
 
-                _reader.AdvanceTo(bufferLocal.Start, bufferLocal.End);
+                _reader.AdvanceTo(bufferLocal.Start, bufferLocal.End);*/
+                foreach (var frame in ParseFrames(buffer))
+                {
+                    yield return frame;
+                }
             }
         }
 
-        public void Close(Exception ex = null) => _pipeConsumer.Close(ex);
-        public void Dispose() => Close();
+        private IEnumerable<T> ParseFrames(ReadOnlySequence<byte> buffer)
+        {
+            while (_decoder.TryParseFrame(new SequenceReader<byte>(buffer), out var frame, out var consumedTo))
+            {
+                yield return frame;
+                buffer = buffer.Slice(consumedTo);
+            }
+
+            _reader.AdvanceTo(buffer.Start, buffer.End);
+        }
     }
 }

@@ -18,11 +18,11 @@ namespace yae.Framing.Tests
         public Memory<byte> Data { get; set; }
     }
 
-    class FrameEncoder : IFrameEncoder<Frame>
+    class FrameEncoder : PipeFrameEncoder<Frame>
     {
-        public ValueTask<FlushResult> WriteAsync(PipeWriter writer, Frame outputFrame)
+        protected override ValueTask<FlushResult> Write(PipeWriter writer, Frame frame)
         {
-            return writer.WriteAsync(outputFrame.Data);
+            return writer.WriteAsync(frame.Data);
         }
     }
 
@@ -33,13 +33,6 @@ namespace yae.Framing.Tests
         public PipeProducerFrameTests(ITestOutputHelper output)
         {
             _output = output;
-        }
-
-        [Fact]
-        public void ValueTaskDefault()
-        {
-            ValueTask<FlushResult> result = default;
-            Assert.True(result.IsCompletedSuccessfully);
         }
 
         [Fact]

@@ -4,22 +4,34 @@ using System.Threading.Tasks;
 
 namespace yae.Framing
 {
-    public abstract class HeaderFrameEncoder<TFrame> : IFrameEncoder<OutputFrame<TFrame>>
+    public abstract class HeaderFrameEncoder<TFrame> : PipeFrameEncoder<OutputFrame<TFrame>>
     {
-        public  ValueTask<FlushResult> WriteAsync(PipeWriter writer, OutputFrame<TFrame> outputFrame)
+        /// <summary>
+        /// Write to the PipeWrite.
+        /// You shouldn't await in this method
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="frame"></param>
+        /// <returns></returns>
+        protected override ValueTask<FlushResult> Write(PipeWriter writer, OutputFrame<TFrame> frame)
         {
-            var headerLen = GetHeaderLength(outputFrame.Frame);
+            var headerLen = GetHeaderLength(frame.Frame);
             var headerSpan = writer.GetSpan(headerLen);
-            WriteHeader(headerSpan, outputFrame);
+            WriteHeader(headerSpan, frame);
             writer.Advance(headerLen);
 
-            var payload = outputFrame.Payload;
+            var payload = frame.Payload;
             return payload.IsEmpty ? default : writer.WriteAsync(payload);
         }
 
+        /// <summary>
+        /// Gets the header length, in bytes.
+        /// </summary>
+        /// <param name="frame"></param>
+        /// <returns></returns>
+        /// todo: check negative length!
         protected abstract int GetHeaderLength(TFrame frame);
-        protected abstract void WriteHeader(Span<byte> dst, OutputFrame<TFrame> frame);
 
-        //public OutputFrame<TFrame> GetOutputFrame(TFrame frame, ReadOnlyMemory<>) //todo: may we can add a "pooling fashion"
+        protected abstract void WriteHeader(Span<byte> dst, OutputFrame<TFrame> frame);
     }
 }
