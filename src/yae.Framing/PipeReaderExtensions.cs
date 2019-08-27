@@ -6,47 +6,72 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using PooledAwait;
 
 namespace yae.Framing
 {
-    public static class PipeReaderExtensions
+    public class PipeConsumer : AbstractPipeConsumer
     {
-        public static async ValueTask<(bool success, ReadResult result)> TryReadAsync
-            (this PipeReader reader, CancellationToken token = default)
+        public PipeConsumer(PipeReader reader) : base(reader) { }
+        protected override ValueTask<ReadResult> ReadAsync() => Reader.ReadAsync();
+    }
+
+    public abstract class AbstractPipeConsumer : IFrameConsumer<ReadOnlySequence<byte>>
+    {
+        protected PipeReader Reader;
+
+        protected AbstractPipeConsumer(PipeReader reader)
         {
-            try
-            {
-                var result = await reader.ReadAsync(token);
-                return (true, result);
-            }
-            catch (OperationCanceledException) //Cancellation support
-            {
-                return (false, default);
-            }
-            catch (InvalidOperationException) //Reading after completion
-            {
-                return (false, default);
-            }
+            Reader = reader;
         }
 
-        public static async IAsyncEnumerable<ReadOnlySequence<byte>> ToAsyncEnumerable
-            (this PipeReader reader, [EnumeratorCancellation] CancellationToken token = default)
+        protected abstract ValueTask<ReadResult> ReadAsync();
+        public async IAsyncEnumerable<ReadOnlySequence<byte>> ConsumeAsync([EnumeratorCancellation] CancellationToken token = default)
         {
-            while (true)
-            {
-                var (success, result) = await reader.TryReadAsync(token); 
-                if (!success)
+            while (!token.IsCancellationRequested)
+            { 
+                static async PooledValueTask<ReadResult> AsPooled(AbstractPipeConsumer r)
+                {
+                    var reader = r ?? throw new ObjectDisposedException(r.ToString());
+                    return await reader.ReadAsync().ConfigureAwait(false);
+                }
+
+                ReadResult result;
+                try
+                {
+                    result = await AsPooled(this);
+                }
+                catch (Exception ex)
+                {
+                    Close(ex);
                     yield break;
+                }
 
                 if (result.IsCanceled)
-                    yield break; //can remove this
+                    break;
 
                 var buffer = result.Buffer;
                 if (buffer.IsEmpty && result.IsCompleted)
-                    yield break;
+                    break;
 
                 yield return buffer;
+
+                if (result.IsCompleted)
+                    break;
             }
+
+            Close();
+        }
+
+        public void Dispose() => Close();
+
+        public void Close(Exception ex = null)
+        {
+            var reader = Interlocked.Exchange(ref Reader, null);
+            if (reader == null) throw new ObjectDisposedException(ToString());
+
+            try { reader.Complete(ex); } catch {}
+            try { reader.CancelPendingRead(); } catch {}
         }
     }
 }

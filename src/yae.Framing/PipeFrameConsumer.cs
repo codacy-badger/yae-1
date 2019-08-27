@@ -15,24 +15,25 @@ namespace yae.Framing
     {
         private PipeReader _reader;
         private readonly IFrameDecoder<T> _decoder;
+        private readonly AbstractPipeConsumer _pipeConsumer;
 
 
         public PipeFrameConsumer(PipeReader reader, IFrameDecoder<T> decoder)
         {
             _reader = reader;
+            _pipeConsumer = new PipeConsumer(reader);
             _decoder = decoder;
         }
 
         /// <summary>
-        /// Consumes asynchronously the pipe and returns frames
+        /// Consumes asynchronously the pipe and returns frames.
+        /// Automatically call dispose at the end of the enumerable.
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
         public async IAsyncEnumerable<T> ConsumeAsync([EnumeratorCancellation] CancellationToken token = default)
         {
-            var reader = _reader ?? throw new ObjectDisposedException(ToString());
-
-            await foreach (var buffer in reader.ToAsyncEnumerable(token))
+            await foreach (var buffer in _pipeConsumer.ConsumeAsync(token))
             {
                 var bufferLocal = buffer; //we can't update result of buffer
 
@@ -42,23 +43,11 @@ namespace yae.Framing
                     bufferLocal = bufferLocal.Slice(consumedTo);
                 }
 
-                reader.AdvanceTo(bufferLocal.Start, bufferLocal.End);
+                _reader.AdvanceTo(bufferLocal.Start, bufferLocal.End);
             }
-
-            //Close(); //todo: should we auto-close?
         }
 
-
-        public void Close(Exception ex = null)
-        {
-            var reader = Interlocked.Exchange(ref _reader, null);
-            if (reader == null) throw new ObjectDisposedException(ToString());
-
-            GC.SuppressFinalize(this);
-            try { reader.Complete(ex); } catch { }
-            try { reader.CancelPendingRead(); } catch { }
-        }
-
+        public void Close(Exception ex = null) => _pipeConsumer.Close(ex);
         public void Dispose() => Close();
     }
 }

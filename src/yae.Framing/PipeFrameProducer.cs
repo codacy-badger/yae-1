@@ -3,46 +3,12 @@ using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
-using yae.Async;
+using PooledAwait;
 
 //using Nito.AsyncEx;
 
 namespace yae.Framing
 {
-    /*public class ManageLock : AsyncOperation
-    {
-        private SemaphoreSlim _semaphore;
-
-        public ManageLock(SemaphoreSlim semaphore) => _semaphore = semaphore;
-
-        protected override ValueTask CanCompleteSync()
-        {
-            return _semaphore.Wait(0) ? default : new ValueTask(_semaphore.WaitAsync());
-        }
-
-        public override void OnFinally()
-        {
-            _semaphore.Release();
-        }
-    }
-
-    public class WriteOperation<T> : AsyncOperation<FlushResult>
-    {
-        private readonly PipeWriter _writer;
-        private readonly IFrameEncoder<T> _encoder;
-        private readonly T _frame;
-
-        public WriteOperation(PipeWriter writer, IFrameEncoder<T> encoder, T frame)
-        {
-            _writer = writer;
-            _encoder = encoder;
-            _frame = frame;
-        }
-        protected override ValueTask<FlushResult> CanCompleteSync()
-        {
-            return _encoder.WriteAsync(_writer, _frame);
-        }
-    }*/
 
     internal sealed class PipeFrameProducer<T> : IFrameProducer<T>
     {
@@ -59,104 +25,73 @@ namespace yae.Framing
 
         public ValueTask ProduceAsync(T frame)
         {
-            /*static async ValueTask Await(ValueTask<FlushResult> flush)
+            static async PooledValueTask Produce(PipeFrameProducer<T> obj, T frm)
             {
-                await flush;
-            }
+                var writer = obj._writer ?? throw new ObjectDisposedException(nameof(PipeFrameProducer<T>));
 
-            var op1 = new ManageLock(_semaphore);
-            var op2 = new WriteOperation<T>(_writer, _encoder, frame);
-            var task = op1.MergeWith(op2);
-            return task.IsCompletedSuccessfully ? default : Await(task);*/
-            return default;
-        }
+                await obj._semaphore.WaitAsync();
 
-        /*public ValueTask ProduceAsyncV2(T frame)
-        {
-            async ValueTask AwaitFlushAndRelease(ValueTask<FlushResult> flush)
-            {
                 try
                 {
-                    await flush;
+                    await obj._encoder.WriteAsync(writer, frm);
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    obj._semaphore.Release();
                 }
             }
+            
+            return Produce(this, frame);
+        }
 
-            async ValueTask WriteAsyncSlowPath(T frame)
+        public ValueTask ProduceAsync(IEnumerable<T> frames)
+        {
+            static async PooledValueTask Produce(PipeFrameProducer<T> obj, IEnumerable<T> enumerable)
             {
-                await _semaphore.WaitAsync();
+                var writer = obj._writer ?? throw new ObjectDisposedException(nameof(PipeFrameProducer<T>));
+
+                await obj._semaphore.WaitAsync();
+
                 try
                 {
-                    var writer = _writer ?? throw new ObjectDisposedException(ToString());
-                    await _encoder.WriteAsync(writer, frame);
+                    foreach (var frm in enumerable)
+                    {
+                        await obj._encoder.WriteAsync(writer, frm);
+                    }
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    obj._semaphore.Release();
                 }
             }
-
-            if (!_semaphore.Wait(0)) return WriteAsyncSlowPath(frame);
-
-            var release = true;
-            try
-            {
-                var writer = _writer ?? throw new ObjectDisposedException(ToString());
-                var write = _encoder.WriteAsync(writer, frame);
-                if (write.IsCompletedSuccessfully) return default;
-                release = false;
-                return AwaitFlushAndRelease(write);
-            }
-            finally
-            {
-                if (release) _semaphore.Release();
-            }
-        }*/
-
-        public async ValueTask ProduceAsync(IEnumerable<T> frames)
-        {
-            var writer = _writer ?? throw new ObjectDisposedException(ToString());
-
-            await _semaphore.WaitAsync();
-            try
-            {
-                foreach (var frame in frames)
-                {
-                    await _encoder.WriteAsync(writer, frame);
-                }
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            return Produce(this, frames);
         }
 
-        //todo: can probably refactor both produces
-        public async ValueTask ProduceAsync(IAsyncEnumerable<T> framesAsync)
+        public ValueTask ProduceAsync(IAsyncEnumerable<T> frames)
         {
-            var writer = _writer ?? throw new ObjectDisposedException(ToString());
-
-            await _semaphore.WaitAsync();
-            try
+            static async PooledValueTask Produce(PipeFrameProducer<T> obj, IAsyncEnumerable<T> enumerable)
             {
-                await foreach (var frame in framesAsync)
+                var writer = obj._writer ?? throw new ObjectDisposedException(nameof(PipeFrameProducer<T>));
+
+                await obj._semaphore.WaitAsync();
+
+                try
                 {
-                    await _encoder.WriteAsync(writer, frame);
+                    await foreach (var frm in enumerable)
+                    {
+                        await obj._encoder.WriteAsync(writer, frm);
+                    }
+                }
+                finally
+                {
+                    obj._semaphore.Release();
                 }
             }
-            finally
-            {
-                _semaphore.Release();
-            }
+            return Produce(this, frames);
         }
 
         public void Dispose()
         {
-            GC.SuppressFinalize(this);
-            
             var writer = Interlocked.Exchange(ref _writer, null);
             if (writer == null) throw new ObjectDisposedException(ToString());
             try { writer.Complete(); } catch { }

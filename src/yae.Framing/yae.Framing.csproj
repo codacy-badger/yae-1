@@ -10,12 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.0.0" />
+    <PackageReference Include="PooledAwait" Version="1.0.45" />
     <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\yae.Async\yae.Async.csproj" />
   </ItemGroup>
 
 </Project>
