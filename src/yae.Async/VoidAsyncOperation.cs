@@ -1,27 +1,22 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
+//todo: may I can implement an API delegate-based?
 namespace yae.Async
 {
-    public abstract class AsyncOperation<TState, TResult> //: IAsyncOperation<TState, ValueTask<TResult>>
+    public abstract class VoidAsyncOperation<TState> //: IAsyncOperation<TState, ValueTask>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected abstract ValueTask<TResult> CanExecuteSynchronous(TState input);
+        protected abstract ValueTask CanExecuteSynchronous(TState input);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected abstract void Continuation(TState input);
-
-        /// <summary>
-        /// Executes the Task with the given input.
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        public ValueTask<TResult> ExecuteAsync(TState input)
+        public ValueTask ExecuteAsync(TState input)
         {
-            async ValueTask<TResult> AwaitTask(ValueTask<TResult> t)
+            async ValueTask AwaitTask(ValueTask t)
             {
                 try
                 {
-                    return await t.ConfigureAwait(false);
+                    await t.ConfigureAwait(false);
                 }
                 finally
                 {
@@ -33,7 +28,7 @@ namespace yae.Async
             try
             {
                 var task = CanExecuteSynchronous(input);
-                if (task.IsCompletedSuccessfully) return task;
+                if (task.IsCompletedSuccessfully) return default;
                 continuation = false;
                 return AwaitTask(task);
             }
@@ -44,7 +39,7 @@ namespace yae.Async
         }
 
         /// <summary>
-        /// <see cref="ValueTask{TResult}"/> merge with <see cref="ValueTask"/>
+        /// <see cref="ValueTask"/> to <see cref="ValueTask"/>
         /// </summary>
         /// <typeparam name="TIn"></typeparam>
         /// <param name="input"></param>
@@ -64,7 +59,7 @@ namespace yae.Async
                     Continuation(input);
                 }
             }
-            async ValueTask AwaitBoth(ValueTask<TResult> t1, ValueTask t2)
+            async ValueTask AwaitBoth(ValueTask t1, ValueTask t2)
             {
                 try
                 {
@@ -81,7 +76,7 @@ namespace yae.Async
             try
             {
                 var operationTask = CanExecuteSynchronous(input);
-
+                
                 if (!operationTask.IsCompletedSuccessfully)
                 {
                     release = false;
@@ -95,22 +90,22 @@ namespace yae.Async
             }
             finally
             {
-                if (release) Continuation(input);
+                if(release) Continuation(input);
             }
         }
 
         /// <summary>
-        /// <see cref="ValueTask{TResult}"/> merge with <see cref="ValueTask{TMergeResult}"/>
+        /// <see cref="ValueTask"/> to <see cref="ValueTask{TResult}"/>
         /// </summary>
         /// <typeparam name="TIn"></typeparam>
-        /// <typeparam name="TMergeResult"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
         /// <param name="input"></param>
         /// <param name="operation"></param>
         /// <param name="input2"></param>
         /// <returns></returns>
-        public ValueTask<TMergeResult> MergeWith<TIn, TMergeResult>(TState input, AsyncOperation<TIn, TMergeResult> operation, TIn input2)
+        public ValueTask<TResult> MergeWith<TIn, TResult>(TState input, AsyncOperation<TIn, TResult> operation, TIn input2)
         {
-            async ValueTask<TMergeResult> AwaitMerge(ValueTask<TMergeResult> t)
+            async ValueTask<TResult> AwaitMerge(ValueTask<TResult> t)
             {
                 try
                 {
@@ -121,7 +116,7 @@ namespace yae.Async
                     Continuation(input);
                 }
             }
-            async ValueTask<TMergeResult> AwaitBoth(ValueTask<TResult> t1, ValueTask<TMergeResult> t2)
+            async ValueTask<TResult> AwaitBoth(ValueTask t1, ValueTask<TResult> t2)
             {
                 try
                 {
@@ -146,7 +141,7 @@ namespace yae.Async
                 }
 
                 var task = operation.ExecuteAsync(input2);
-                if (task.IsCompletedSuccessfully) return default;
+                if (task.IsCompletedSuccessfully) return task;
                 release = false;
                 return AwaitMerge(task);
             }

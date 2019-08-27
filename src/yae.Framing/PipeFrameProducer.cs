@@ -9,7 +9,7 @@ using yae.Async;
 
 namespace yae.Framing
 {
-    public class ManageLock : AsyncOperation
+    /*public class ManageLock : AsyncOperation
     {
         private SemaphoreSlim _semaphore;
 
@@ -42,7 +42,7 @@ namespace yae.Framing
         {
             return _encoder.WriteAsync(_writer, _frame);
         }
-    }
+    }*/
 
     internal sealed class PipeFrameProducer<T> : IFrameProducer<T>
     {
@@ -59,7 +59,7 @@ namespace yae.Framing
 
         public ValueTask ProduceAsync(T frame)
         {
-            static async ValueTask Await(ValueTask<FlushResult> flush)
+            /*static async ValueTask Await(ValueTask<FlushResult> flush)
             {
                 await flush;
             }
@@ -67,7 +67,8 @@ namespace yae.Framing
             var op1 = new ManageLock(_semaphore);
             var op2 = new WriteOperation<T>(_writer, _encoder, frame);
             var task = op1.MergeWith(op2);
-            return task.IsCompletedSuccessfully ? default : Await(task);
+            return task.IsCompletedSuccessfully ? default : Await(task);*/
+            return default;
         }
 
         /*public ValueTask ProduceAsyncV2(T frame)

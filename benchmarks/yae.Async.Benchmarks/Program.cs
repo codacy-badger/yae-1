@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Order;
@@ -15,29 +17,25 @@ namespace yae.Async.Benchmarks
         }
     }
 
-    public class OldOperation : AsyncOperation
+    public class DumbAsyncOperation : VoidAsyncOperation<object>
     {
-        public readonly object _obj1;
-        public readonly object _obj2;
-        public readonly object _obj3;
-
-        public OldOperation(object obj1, object obj2, object obj3)
+        protected override ValueTask CanExecuteSynchronous(object input) => Benchmark.GetTask();
+        protected override void Continuation(object input)
         {
-            _obj1 = obj1;
-            _obj2 = obj2;
-            _obj3 = obj3;
-        }
-        protected override ValueTask CanCompleteSync()
-        {
-            return Benchmark.GetTask();
+            //throw new NotImplementedException();
         }
     }
 
-    public class NewOperation : AsyncOperationV2<(object, object, object)>
+    public class SemaphoreOperation : VoidAsyncOperation<SemaphoreSlim>
     {
-        protected override ValueTask CanCompleteSync((object, object, object) input)
+        protected override ValueTask CanExecuteSynchronous(SemaphoreSlim input)
         {
-            return Benchmark.GetTask();
+            return input.Wait(0) ? default : new ValueTask(input.WaitAsync());
+        }
+
+        protected override void Continuation(SemaphoreSlim input)
+        {
+            input.Release();
         }
     }
 
@@ -45,31 +43,30 @@ namespace yae.Async.Benchmarks
     [Orderer(SummaryOrderPolicy.FastestToSlowest)]
     public class Benchmark
     {
-        private NewOperation _new;
+        private DumbAsyncOperation _operation;
+        private SemaphoreSlim _semaphore1;
+        private SemaphoreSlim _semaphore2;
+        private SemaphoreOperation _semaphoreOperation;
 
         [GlobalSetup]
         public void Setup()
-        {
-            _new = new NewOperation();
+        { 
+            _semaphore1 = new SemaphoreSlim(1);
+            _semaphore2 = new SemaphoreSlim(1);
+            _operation = new DumbAsyncOperation();
+            _semaphoreOperation = new SemaphoreOperation();
         }
 
-        [Benchmark]
-        public ValueTask Old()
-        {
-            var op = new OldOperation(new object(), new object(), new object());
-            return op.ExecuteAsync();
-        }
-
-        [Benchmark]
+        //[Benchmark]
         public ValueTask New()
         {
-            return _new.ExecuteAsync((new object(), new object(), new object()));
+            return _operation.ExecuteAsync(null);
         }
 
-        [Benchmark]
+        //[Benchmark]
         public ValueTask Plain()
         {
-            async ValueTask Await(ValueTask t)
+            static async ValueTask Await(ValueTask t)
             {
                 try
                 {
@@ -81,21 +78,17 @@ namespace yae.Async.Benchmarks
                 }
             }
 
-            ValueTask GetTask((object obj1, object obj2, object obj3) input)
+            static ValueTask GetTask()
             {
                 return Benchmark.GetTask();
             }
 
-            void OnFinally() { }
-
-            var obj1 = new object();
-            var obj2 = new object();
-            var obj3 = new object();
+            static void OnFinally() { }
 
             var release = true;
             try
             {
-                var task = GetTask((obj1, obj2, obj3));
+                var task = GetTask();
                 if (task.IsCompletedSuccessfully) return default;
                 release = false;
                 return Await(task);
@@ -103,6 +96,96 @@ namespace yae.Async.Benchmarks
             finally{ if(release) OnFinally(); }
         }
 
-        public static ValueTask GetTask() => new ValueTask(Task.Delay(1));
+        [Benchmark]
+        public ValueTask Plain_Semaphore()
+        {
+            var semaphore = _semaphore1;
+            async ValueTask AwaitSemaphore(Task t)
+            {
+                try
+                {
+                    await t.ConfigureAwait(false);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }
+
+            var release = true;
+            var lockTaken = semaphore.Wait(0);
+            try
+            {
+                if (lockTaken) return default;
+                release = false;
+                return AwaitSemaphore(semaphore.WaitAsync());
+            }
+            finally
+            {
+                if (release) semaphore.Release();
+            }
+        }
+
+        [Benchmark]
+        public ValueTask New_Semaphore()
+        {
+            return _semaphoreOperation.ExecuteAsync(_semaphore2);
+        }
+
+        [Benchmark]
+        public ValueTask Plain_Merge()
+        {
+            var semaphore = _semaphore1;
+
+            async ValueTask AwaitContinuation(ValueTask t)
+            {
+                try
+                {
+                    await t;
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }
+
+            async ValueTask AwaitBoth(Task t, ValueTask continuation)
+            {
+                try
+                {
+                    await t.ConfigureAwait(false);
+                    await continuation.ConfigureAwait(false);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }
+
+            var release = true;
+            var lockTaken = semaphore.Wait(0);
+            if (!lockTaken) return AwaitBoth(semaphore.WaitAsync(), GetTask());
+
+            try
+            {
+                var task = GetTask();
+                if (task.IsCompletedSuccessfully) return default;
+                release = false;
+                return AwaitContinuation(task);
+            }
+            finally
+            {
+                if (release) semaphore.Release();
+            }
+        }
+
+        [Benchmark]
+        public ValueTask New_Merge()
+        {
+            return _semaphoreOperation.MergeWith(_semaphore2, _operation, null);
+        }
+
+
+        public static ValueTask GetTask() => default;
     }
 }

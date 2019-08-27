@@ -25,7 +25,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Async", "src\yae.Async\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Async.Tests", "tests\yae.Async.Tests\yae.Async.Tests.csproj", "{7DFDE2FC-FE32-460B-8E5E-86DF7EE54DFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.Async.Benchmarks", "benchmarks\yae.Async.Benchmarks\yae.Async.Benchmarks.csproj", "{4D942FA2-D51E-40B8-AC97-70267F806458}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Async.Benchmarks", "benchmarks\yae.Async.Benchmarks\yae.Async.Benchmarks.csproj", "{4D942FA2-D51E-40B8-AC97-70267F806458}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.Serializer", "src\yae.Serializer\yae.Serializer.csproj", "{FAEC9E2F-7A7F-4590-9E38-7A74A7B628F8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.Serializer.Tests", "tests\yae.Serializer.Tests\yae.Serializer.Tests.csproj", "{EFE157B9-4672-47E5-905E-355BA05CCA10}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,6 +69,14 @@ Global
 		{4D942FA2-D51E-40B8-AC97-70267F806458}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D942FA2-D51E-40B8-AC97-70267F806458}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D942FA2-D51E-40B8-AC97-70267F806458}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAEC9E2F-7A7F-4590-9E38-7A74A7B628F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAEC9E2F-7A7F-4590-9E38-7A74A7B628F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAEC9E2F-7A7F-4590-9E38-7A74A7B628F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAEC9E2F-7A7F-4590-9E38-7A74A7B628F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFE157B9-4672-47E5-905E-355BA05CCA10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFE157B9-4672-47E5-905E-355BA05CCA10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFE157B9-4672-47E5-905E-355BA05CCA10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFE157B9-4672-47E5-905E-355BA05CCA10}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -78,6 +90,8 @@ Global
 		{B76A8EF2-4F8B-42A7-BC06-20EF6AD3ECFE} = {E5A325B5-16AE-43C9-8244-2929B978545D}
 		{7DFDE2FC-FE32-460B-8E5E-86DF7EE54DFC} = {282D50FD-0D00-4EFF-87E4-447D21A494F3}
 		{4D942FA2-D51E-40B8-AC97-70267F806458} = {354A3E14-3D4A-4582-A75C-B436499F711D}
+		{FAEC9E2F-7A7F-4590-9E38-7A74A7B628F8} = {E5A325B5-16AE-43C9-8244-2929B978545D}
+		{EFE157B9-4672-47E5-905E-355BA05CCA10} = {282D50FD-0D00-4EFF-87E4-447D21A494F3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A177D3CD-3E0F-44CF-95EE-D59101C5055F}
