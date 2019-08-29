@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Text;
@@ -8,40 +8,25 @@ using yae.Framing.Sample.BasicFrame;
 
 namespace yae.Framing.Tests
 {
-
     public class BasicFrameEncoderTests
     {
+
         [Fact]
         public async Task WriteAsync_WithPayload()
         {
-            var (encoder, reader, writer) = GetEncoder();
-            var outputFrame = GetOutputFrame(4, new byte[1024]);
+            var (encoder, reader) = GetEncoder();
+            var frame = FrameProvider.GetFrame(4);
 
-            await encoder.WriteAsync(writer, outputFrame);
+            await encoder.EncodeAsync(frame);
             var result = await reader.ReadAsync();
-            Assert.Equal(1024+8, result.Buffer.Length);
+            Assert.Equal(FrameProvider.HeaderSize + FrameProvider.FrameSize, result.Buffer.Length);
         }
 
-        [Fact]
-        public async Task WriteAsync_WithEmptyPayload()
-        {
-            var (encoder, _, writer) = GetEncoder();
-            var outputFrame = GetOutputFrame(4, new byte[0]);
-
-            await encoder.WriteAsync(writer, outputFrame); //shouldn't block
-        }
-
-        private static OutputFrame<BasicFrame> GetOutputFrame(int id, ReadOnlyMemory<byte> payload)
-        {
-            var frame = new BasicFrame {MessageId = id};
-            return new OutputFrame<BasicFrame>(frame, payload);
-        }
-
-        private static (HeaderBasicFrameEncoder encoder, PipeReader reader, PipeWriter writer) GetEncoder()
+        private static (HeaderBasicFrameEncoder encoder, PipeReader reader) GetEncoder()
         {
             var pipe = new Pipe();
-            var encoder = new HeaderBasicFrameEncoder();
-            return (encoder, pipe.Reader, pipe.Writer);
+            var encoder = new HeaderBasicFrameEncoder(pipe.Writer);
+            return (encoder, pipe.Reader);
         }
     }
 }

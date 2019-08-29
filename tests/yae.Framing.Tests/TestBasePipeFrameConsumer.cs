@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace yae.Framing.Tests
 {
-    class TestBasePipeFrameConsumer : AbstractPipeConsumer
+    /*class TestBasePipeFrameConsumer : AbstractPipeConsumer
     {
         public ReadResult Result { get; set; }
         public bool ShouldThrow { get; set; } = false;
@@ -18,5 +18,5 @@ namespace yae.Framing.Tests
             if(ShouldThrow) throw new Exception("Exception from tests");
             return new ValueTask<ReadResult>(Result);
         }
-    }
+    }*/
 }

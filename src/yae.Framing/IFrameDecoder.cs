@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace yae.Framing
 {
-    public interface IFrameDecoder<TFrame>
+    public interface IFrameDecoder<out TFrame> : IDisposable where TFrame : IFrame
     {
-        bool TryParseFrame(SequenceReader<byte> reader, out TFrame frame, out SequencePosition consumedTo);
+        IAsyncEnumerable<TFrame> DecodeAsync(CancellationToken token = default);
+        void Close(Exception ex = null);
     }
 }

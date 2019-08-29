@@ -31,8 +31,6 @@ namespace yae.Framing.Benchmarks
     [CoreJob, MemoryDiagnoser, WarmupCount(2), IterationCount(1)]
     public class PipeFrameBenchmarks
     {
-        IFrameConsumer<Frame> _consumer;
-        IFrameProducer<Frame> _producer;
 
         Frame frm;
 
@@ -48,24 +46,6 @@ namespace yae.Framing.Benchmarks
             var pipe = new Pipe();
             //_consumer = PipeConsumerFactory.CreatePipeConsumerFrame(pipe.Reader, new Decoder());
             //_producer = PipeProducerFactory.CreatePipeProducerFrame(pipe.Writer, new Encoder());
-        }
-
-        [Benchmark]
-        public async Task ProducerToConsumer()
-        {
-            int n = 10;
-            var enumerator = _consumer.ConsumeAsync().GetAsyncEnumerator();
-            for (int i = 0; i < n; i++)
-            {
-                await _producer.ProduceAsync(frm);
-                if (!await enumerator.MoveNextAsync())
-                    break;
-
-                var frame = enumerator.Current;
-                if(frame.Data.Length != 1024)
-                    throw new Exception("Length doenst match");
-            }
-            Console.WriteLine($"Test ended up with {n} it");
         }
 
         //[Benchmark]

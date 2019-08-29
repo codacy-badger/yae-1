@@ -1,10 +1,11 @@
 ﻿using System.Buffers;
+using System.IO.Pipelines;
 
 namespace yae.Framing.Sample.BasicFrame
 {
     public class HeaderBasicFrameDecoder : HeaderFrameDecoder<BasicFrame>
     {
-        protected override bool TryParseHeader(ref SequenceReader<byte> sequenceReader, out BasicFrame frame, out int length)
+        public override bool TryParseHeader(ref SequenceReader<byte> sequenceReader, out BasicFrame frame, out int length)
         {
             if (sequenceReader.TryReadLittleEndian(out int messageId) &&
                 sequenceReader.TryReadLittleEndian(out length))
@@ -16,6 +17,10 @@ namespace yae.Framing.Sample.BasicFrame
             frame = default;
             length = default;
             return false;
+        }
+
+        public HeaderBasicFrameDecoder(PipeReader reader) : base(reader)
+        {
         }
     }
 }

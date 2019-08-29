@@ -1,14 +1,22 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
+using System.IO.Pipelines;
+using System.Threading;
 
 namespace yae.Framing
 {
-    public abstract class HeaderFrameDecoder<TFrame> : IFrameDecoder<InputFrame<TFrame>>
+    public abstract class HeaderFrameDecoder<TFrame> : PipeFrameDecoder<TFrame>
+        where TFrame : IFrame
     {
-        public bool TryParseFrame(SequenceReader<byte> reader, out InputFrame<TFrame> frameWrapper, 
+        protected HeaderFrameDecoder(PipeReader reader) : base(reader)
+        {
+        }
+
+        public override bool TryParseFrame(SequenceReader<byte> reader, out TFrame frame, 
             out SequencePosition consumedTo)
         {
-            var canParseHeader = TryParseHeader(ref reader, out var frame, out var length);
+            var canParseHeader = TryParseHeader(ref reader, out frame, out var length);
             var canParsePayload = reader.Remaining >= length;
 
             if(length < 0)
@@ -17,14 +25,13 @@ namespace yae.Framing
             if (canParseHeader && canParsePayload)
             {
                 var payload = reader.Sequence.Slice(reader.Position, length);
-                frameWrapper = new InputFrame<TFrame>(frame, payload);
+                frame.Payload = payload.Lease();
 
                 reader.Advance(length);
                 consumedTo = reader.Position;
                 return true;
             }
 
-            frameWrapper = default;
             consumedTo = default;
             return false;
         }
@@ -39,6 +46,6 @@ namespace yae.Framing
         /// <param name="frame">returns frame only if you have one, otherwise returns default.</param>
         /// <param name="length">returns the length of the frame, excluding the header.</param>
         /// <returns></returns>
-        protected abstract bool TryParseHeader(ref SequenceReader<byte> sequenceReader, out TFrame frame, out int length);
+        public abstract bool TryParseHeader(ref SequenceReader<byte> sequenceReader, out TFrame frame, out int length);
     }
 }

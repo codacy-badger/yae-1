@@ -9,7 +9,7 @@ namespace yae.Framing.Tests
 {
     public class HeaderBasicFrameDecoderTests
     {
-        [Fact]
+        /*[Fact]
         public void TryParseFrame_CompleteFrame()
         {
             var encoder = new HeaderBasicFrameDecoder();
@@ -66,6 +66,6 @@ namespace yae.Framing.Tests
             BinaryPrimitives.WriteInt32LittleEndian(dst, messageId);
             BinaryPrimitives.WriteInt32LittleEndian(dst.AsSpan(4), length);
             return new ReadOnlySequence<byte>(dst);
-        }
+        }*/
     }
 }

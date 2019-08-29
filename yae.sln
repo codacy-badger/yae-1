@@ -25,9 +25,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Serializer", "src\yae.S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Serializer.Tests", "tests\yae.Serializer.Tests\yae.Serializer.Tests.csproj", "{EFE157B9-4672-47E5-905E-355BA05CCA10}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.Framing.Server", "samples\yae.Framing.Server\yae.Framing.Server.csproj", "{D3FDA47A-20E6-4DDD-AA5A-EE6E35008F0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Framing.Server", "samples\yae.Framing.Server\yae.Framing.Server.csproj", "{D3FDA47A-20E6-4DDD-AA5A-EE6E35008F0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.Framing.Client", "samples\yae.Framing.Client\yae.Framing.Client.csproj", "{5E6B5A35-8327-4D13-8277-1E98801F7235}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Framing.Client", "samples\yae.Framing.Client\yae.Framing.Client.csproj", "{5E6B5A35-8327-4D13-8277-1E98801F7235}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.ECS", "src\yae.ECS\yae.ECS.csproj", "{39FD691A-2816-4B64-A159-E572DD54E3C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.ECS.Samples", "samples\yae.ECS.Samples\yae.ECS.Samples.csproj", "{7BB21C29-1ED6-4513-886C-0929B86873E6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,6 +75,14 @@ Global
 		{5E6B5A35-8327-4D13-8277-1E98801F7235}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E6B5A35-8327-4D13-8277-1E98801F7235}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E6B5A35-8327-4D13-8277-1E98801F7235}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39FD691A-2816-4B64-A159-E572DD54E3C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39FD691A-2816-4B64-A159-E572DD54E3C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39FD691A-2816-4B64-A159-E572DD54E3C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39FD691A-2816-4B64-A159-E572DD54E3C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BB21C29-1ED6-4513-886C-0929B86873E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BB21C29-1ED6-4513-886C-0929B86873E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BB21C29-1ED6-4513-886C-0929B86873E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BB21C29-1ED6-4513-886C-0929B86873E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -85,6 +97,8 @@ Global
 		{EFE157B9-4672-47E5-905E-355BA05CCA10} = {282D50FD-0D00-4EFF-87E4-447D21A494F3}
 		{D3FDA47A-20E6-4DDD-AA5A-EE6E35008F0B} = {363EA382-9301-4497-B3EF-2036C7E5C79F}
 		{5E6B5A35-8327-4D13-8277-1E98801F7235} = {363EA382-9301-4497-B3EF-2036C7E5C79F}
+		{39FD691A-2816-4B64-A159-E572DD54E3C0} = {E5A325B5-16AE-43C9-8244-2929B978545D}
+		{7BB21C29-1ED6-4513-886C-0929B86873E6} = {363EA382-9301-4497-B3EF-2036C7E5C79F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A177D3CD-3E0F-44CF-95EE-D59101C5055F}
