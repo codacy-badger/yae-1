@@ -5,7 +5,7 @@ dist: xenial
 addons:
   snaps:
   - name: dotnet-sdk
-    classic: true
+    confinement: classic
     channel: latest/beta
     
 matrix:
@@ -21,9 +21,9 @@ jobs:
     include:
       - stage: "Build"
         script: 
-        - dotnet build src/yae.Framing/  --configuration Release
+        - dotnet-sdk build src/yae.Framing/  --configuration Release
         name: "Source"
       - stage: "Tests"
         script: 
-        - dotnet test tests/yae.Framing/
+        - dotnet-sdk test tests/yae.Framing/
         name: "Tests"
