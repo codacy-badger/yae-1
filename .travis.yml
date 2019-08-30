@@ -2,7 +2,7 @@ language: csharp
 sudo: required
 mono: none
 dist: xenial
-dotnet: 3.0.100-preview8-013656
+dotnet: 3.0
   
 # Define the jobs
 jobs:
