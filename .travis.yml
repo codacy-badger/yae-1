@@ -2,12 +2,20 @@ language: csharp
 sudo: required
 mono: none
 dist: xenial
-dotnet: 3.0.0-preview8
-
+addons:
+  snaps:
+  - name: dotnet-sdk
+    classic: true
+    channel: latest/beta
+    
 matrix:
   env:
     - DOTNET_CLI_TELEMETRY_OPTOUT=1
-
+    
+script:
+  - sudo snap alias dotnet-sdk.dotnet dotnet
+  - dotnet --version
+  
 # Define the jobs
 jobs:
     include:
