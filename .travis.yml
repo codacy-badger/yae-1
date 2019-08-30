@@ -1,0 +1,21 @@
+language: csharp
+sudo: required
+mono: none
+dist: xenial
+dotnet: 3.0.0-preview8
+
+matrix:
+  env:
+    - DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+# Define the jobs
+jobs:
+    include:
+      - stage: "Build"
+        script: 
+        - dotnet build src/yae.Framing/  --configuration Release
+        name: "Source"
+      - stage: "Tests"
+        script: 
+        - dotnet test tests/yae.Framing/
+        name: "Tests"
