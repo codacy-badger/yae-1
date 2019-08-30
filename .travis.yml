@@ -1,18 +1,13 @@
-language: csharp
-sudo: required
-mono: none
 dist: xenial
-dotnet: 3.0
-  
-# Define the jobs
-jobs:
-    include:
-      - stage: "Build"
-        script: 
-        - dotnet build
-        name: "Source"
-        
-      - stage: "Tests"
-        script: 
-        - dotnet test
-        name: "Tests"
+addons:
+  snaps:
+  - name: dotnet-sdk
+    classic: true
+    channel: latest/beta
+sudo: required
+language: csharp
+mono: none
+script:
+  - sudo snap alias dotnet-sdk.dotnet dotnet
+  - dotnet --version
+  - dotnet build
