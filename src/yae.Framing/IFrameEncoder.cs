@@ -12,4 +12,6 @@ namespace yae.Framing
         ValueTask EncodeEnumerableAsync(IAsyncEnumerable<TFrame> frames, CancellationToken token = default);
         void Close(Exception ex = null);
     }
+
+    
 }

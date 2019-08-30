@@ -23,26 +23,16 @@ namespace yae.Framing
 
         public async IAsyncEnumerable<TFrame> DecodeAsync([EnumeratorCancellation] CancellationToken token = default)
         {
-            while (!token.IsCancellationRequested)
+            while (true)
             {
-                static async PooledValueTask<ReadResult> AsPooled(PipeReader reader)
+                static async PooledValueTask<ReadResult> AsPooled(PipeReader reader, CancellationToken t)
                 {
-                    return await reader.ReadAsync().ConfigureAwait(false);
+                    return await reader.ReadAsync(t).ConfigureAwait(false);
                 }
 
-                if (_reader == null)
-                    yield break;
+                var reader = _reader ?? throw new ObjectDisposedException(ToString());
 
-                ReadResult result;
-                try
-                {
-                    result = await AsPooled(_reader);
-                }
-                catch (Exception ex)
-                {
-                    Close(ex);
-                    yield break;
-                }
+                var result = await AsPooled(reader, token);
 
                 if (result.IsCanceled)
                     break;
@@ -62,10 +52,14 @@ namespace yae.Framing
                 if (result.IsCompleted)
                     break;
             }
-
-            Close();
         }
+
         public abstract bool TryParseFrame(SequenceReader<byte> reader, out TFrame frame, out SequencePosition consumedTo);
+
+        public void Reset(PipeReader reader)
+        {
+            Interlocked.CompareExchange(ref _reader, reader, null);
+        }
 
         public void Close(Exception ex = null)
         {
@@ -75,7 +69,6 @@ namespace yae.Framing
             try { reader.Complete(ex); } catch { }
             try { reader.CancelPendingRead(); } catch { }
         }
-
         public void Dispose() => Close();
     }
 }
