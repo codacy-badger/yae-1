@@ -74,12 +74,14 @@ namespace yae.Framing.Server
             try
             {
                 _logger.LogInformation("Client connected");
-                var decoder = new HeaderBasicFrameDecoder(connection.Transport.Input);
+                var decoder = new BasicFrameDecoder();
+                decoder.Reset(connection.Transport.Input);
+
                 ulong total = 0;
                 var sw = Stopwatch.StartNew();
-                await foreach (var frame in decoder.DecodeAsync())
+                await foreach (var (frame, payload) in decoder.DecodeAsync())
                 {
-                    var payload = frame.Payload.Memory;
+                    //var payload = frame.Payload.Memory;
                     total += (ulong) payload.Length;
                     _logger.LogInformation($"Received frame with MessageId={frame.MessageId}, Length={payload.Length}");
                     Console.Title = $"Received {total / 1000.0 / 1000 / 1000} GB";

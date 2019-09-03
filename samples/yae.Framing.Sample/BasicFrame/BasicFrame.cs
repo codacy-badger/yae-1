@@ -8,9 +8,9 @@ namespace yae.Framing.Sample.BasicFrame
     /// <summary>
     /// Id: 4, Length: 4, Payload: Length
     /// </summary>
-    public class BasicFrame : IFrame
+    public class BasicFrame
     {
         public int MessageId { get; set; }
-        public IMemoryOwner<byte> Payload { get; set; }
+        //public IMemoryOwner<byte> Payload { get; set; }
     }
 }

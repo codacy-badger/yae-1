@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace yae.Framing
+namespace yae.Memory
 {
     //credits: https://github.com/mgravell/simplsockets/blob/master/SimplPipelines/MemoryOwner.cs
     public static class MemoryOwner

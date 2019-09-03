@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
 using yae.Framing.Sample.BasicFrame;
+using yae.Memory;
 
 namespace yae.Framing.Tests
 {
@@ -23,6 +24,14 @@ namespace yae.Framing.Tests
             BinaryPrimitives.WriteInt32LittleEndian(memory.Span.Slice(4), frame.Payload.Memory.Length);
             writer.Advance(8);
             return writer.WriteAsync(frame.Payload.Memory);
+        }
+
+        public static ReadOnlyMemory<byte> GetFrameMemory(int messageId, int length)
+        {
+            Memory<byte> buffer = new byte[4+4+length];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer.Span, messageId);
+            BinaryPrimitives.WriteInt32LittleEndian(buffer.Span.Slice(4), length);
+            return buffer;
         }
 
         /*private static ReadOnlySequence<byte> GetFrame(int length, int messageId)
