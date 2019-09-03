@@ -27,7 +27,10 @@ namespace yae.Framing.IO
         {
             static async PooledValueTask Produce(FrameEncoder<TFrame> obj, TFrame frm, ReadOnlyMemory<byte> p, CancellationToken token)
             {
-                if (obj.Writer == null) return;
+                if (obj.Writer == null)
+                {
+                    return;
+                }
 
                 var writer = obj.Writer;
                 await obj._semaphore.WaitAsync(token).ConfigureAwait(false);
@@ -119,7 +122,11 @@ namespace yae.Framing.IO
         public void Close(Exception ex = null)
         {
             var writer = Interlocked.Exchange(ref Writer, null);
-            if (writer == null) return;
+            if (writer == null)
+            {
+                return;
+            }
+
             try { writer.Complete(ex); } catch { /* silent complete */}
             try { writer.CancelPendingFlush(); } catch { /* ignore errors */ }
             _semaphore.Dispose();

@@ -9,7 +9,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using yae.Framing.Parsing;
-using yae.Memory;
 
 [assembly: InternalsVisibleTo("yae.Framing.Tests")]
 namespace yae.Framing.IO
@@ -34,16 +33,22 @@ namespace yae.Framing.IO
 
                 var reader = _reader;
                 if (reader == null)
+                {
                     break;
+                }
 
                 var result = await AsPooled(reader, token);
 
                 if (result.IsCanceled)
+                {
                     break;
+                }
 
                 var buffer = result.Buffer;
                 if (buffer.IsEmpty && result.IsCompleted)
+                {
                     break;
+                }
 
                 foreach (var frame in ParseFrames(buffer))
                 {
@@ -51,7 +56,9 @@ namespace yae.Framing.IO
                 }
 
                 if (result.IsCompleted)
+                {
                     break;
+                }
             }
         }
 
@@ -62,13 +69,19 @@ namespace yae.Framing.IO
                 //todo: may change to ref? ^^'
                 var reader = new SequenceReader<byte>(buffer);
                 if (!_frameReader.TryParseFrame(ref reader, out var frame, out var length))
+                {
                     break;
+                }
 
                 if(length < 0)
+                {
                     throw new ArgumentOutOfRangeException(nameof(length));
+                }
 
                 if (reader.Remaining < length)
+                {
                     break;
+                }
 
                 var payload = buffer.Slice(reader.Position, length);
 
@@ -87,10 +100,15 @@ namespace yae.Framing.IO
             return true;
         }
 
-        public void Close(Exception ex = null)
+        public void Close() => Close(null);
+        public void Close(Exception ex) => _close(ex);
+        private void _close(Exception ex = null)
         {
             var reader = Interlocked.Exchange(ref _reader, null);
-            if (reader == null) return;
+            if (reader == null)
+            {
+                return;
+            }
 
             try { reader.Complete(ex); } catch { /* silent complete */ }
             try { reader.CancelPendingRead(); } catch { /* silent cancel */ }

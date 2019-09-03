@@ -7,7 +7,7 @@ using System.Threading;
 namespace yae.Memory
 {
     //credits: https://github.com/mgravell/simplsockets/blob/master/SimplPipelines/MemoryOwner.cs
-    public static class MemoryOwner
+    /*public static class MemoryOwner
     {
         public static int LeakCount<T>() => ArrayPoolOwner<T>.LeakCount();
         public static IMemoryOwner<T> Empty<T>() => SimpleMemoryOwner<T>.Empty;
@@ -81,5 +81,5 @@ namespace yae.Memory
             private static int _leakCount;
             internal static int LeakCount() => Thread.VolatileRead(ref _leakCount);
         }
-    }
+    }*/
 }
