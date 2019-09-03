@@ -17,15 +17,16 @@ namespace yae.Framing.Tests
             var (encoder, reader) = GetEncoder();
             var frame = FrameProvider.GetFrame(4);
 
-            await encoder.EncodeAsync(frame);
+            await encoder.EncodeAsync(frame, new byte[1024]);
             var result = await reader.ReadAsync();
             Assert.Equal(FrameProvider.HeaderSize + FrameProvider.FrameSize, result.Buffer.Length);
         }
 
-        private static (HeaderBasicFrameEncoder encoder, PipeReader reader) GetEncoder()
+        private static (BasicFrameEncoder encoder, PipeReader reader) GetEncoder()
         {
             var pipe = new Pipe();
-            var encoder = new HeaderBasicFrameEncoder(pipe.Writer);
+            var encoder = new BasicFrameEncoder();
+            encoder.Reset(pipe.Writer);
             return (encoder, pipe.Reader);
         }
     }

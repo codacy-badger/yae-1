@@ -69,7 +69,6 @@ namespace yae.Framing.IO
         {
             while (true)
             {
-                //todo: may change to ref? ^^'
                 var reader = new SequenceReader<byte>(buffer);
                 if (!_frameReader.TryParseFrame(ref reader, out var frame, out var length))
                 {
@@ -87,7 +86,7 @@ namespace yae.Framing.IO
                 }
 
                 var payload = buffer.Slice(reader.Position, length);
-
+                FramesRead++;
                 yield return (frame, payload);
                 buffer = buffer.Slice(payload.End);
 

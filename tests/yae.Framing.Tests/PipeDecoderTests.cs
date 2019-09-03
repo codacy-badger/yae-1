@@ -7,35 +7,13 @@ using FluentAssertions;
 using FluentAssertions.Extensions;
 using Moq;
 using Xunit;
+using yae.Framing.IO;
 using yae.Framing.Sample.BasicFrame;
 
 namespace yae.Framing.Tests
 {
     public class PipeDecoderTests
     {
-        [Fact]
-        public void ResetPipe_ShouldSetReader_OnUninitialized()
-        {
-            var (decoder, reader, _) = GetDecoder();
-            Assert.Null(decoder.Reader);
-            decoder.Reset(reader);
-            Assert.NotNull(decoder.Reader);
-        }
-
-        [Fact]
-        public void ResetPipe_ShouldNotSetReader_OnInitialized()
-        {
-            var (decoder, reader, _) = GetDecoder();
-
-            decoder.Reader.Should().BeNull();
-            decoder.Reset(reader);
-            decoder.Reader.Should().Be(reader);
-
-            var newReader = new Pipe().Reader;
-
-            decoder.Reset(newReader);
-            decoder.Reader.Should().NotBe(newReader);
-        }
 
         [Fact]
         public void Close_ShouldCompletePipe()
@@ -62,13 +40,10 @@ namespace yae.Framing.Tests
                 await writer.WriteAsync(FrameProvider.GetFrameMemory(4, FrameProvider.FrameSize));
                 var moveNext = await enumerator.MoveNextAsync();
                 moveNext.Should().BeTrue();
-                var current = enumerator.Current;
-                current.MessageId.Should().Be(4);
-                current.Payload.Memory.Length.Should().Be(FrameProvider.FrameSize);
+                var (frame, payload) = enumerator.Current;
+                frame.MessageId.Should().Be(4);
+                payload.Length.Should().Be(FrameProvider.FrameSize);
             }
-
-            var totalSize = n * (FrameProvider.FrameSize + FrameProvider.HeaderSize);
-            decoder.BytesRead.Should().Be(totalSize);
             decoder.FramesRead.Should().Be(n);
         }
 
@@ -115,8 +90,9 @@ namespace yae.Framing.Tests
         private static (FrameDecoder<BasicFrame> decoder, PipeReader reader, PipeWriter writer) GetDecoder()
         {
             var pipe = new Pipe();
-
-            return (new BasicFrameDecoder(pipe.Reader), pipe.Reader, pipe.Writer);
+            var decoder = new BasicFrameDecoder();
+            decoder.Reset(pipe.Reader);
+            return (decoder, pipe.Reader, pipe.Writer);
         }
     }
 }

@@ -21,9 +21,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Framing.Server", "sampl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Framing.Client", "samples\yae.Framing.Client\yae.Framing.Client.csproj", "{5E6B5A35-8327-4D13-8277-1E98801F7235}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.Binary", "src\yae.Binary\yae.Binary.csproj", "{5F9E602F-8D6B-475F-AF8D-E0EB91B8BC3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Binary", "src\yae.Binary\yae.Binary.csproj", "{5F9E602F-8D6B-475F-AF8D-E0EB91B8BC3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yae.Memory", "src\yae.Memory\yae.Memory.csproj", "{E2E2ADA5-48A4-455B-A28F-CF569A3DF661}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "yae.Memory", "src\yae.Memory\yae.Memory.csproj", "{E2E2ADA5-48A4-455B-A28F-CF569A3DF661}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

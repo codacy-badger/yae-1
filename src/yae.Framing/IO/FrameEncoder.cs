@@ -55,7 +55,10 @@ namespace yae.Framing.IO
         {
             static async PooledValueTask Produce(FrameEncoder<TFrame> obj, IEnumerable<(TFrame frame, ReadOnlyMemory<byte> payload)> enumerable, CancellationToken t)
             {
-                if (obj.Writer == null) return;
+                if (obj.Writer == null)
+                {
+                    return;
+                }
 
                 var writer = obj.Writer;
 

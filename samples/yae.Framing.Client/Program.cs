@@ -7,8 +7,6 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using Pipelines.Sockets.Unofficial;
 using yae.Framing.Sample.BasicFrame;
-using yae.Memory;
-using Environment = System.Environment;
 
 namespace yae.Framing.Client
 {

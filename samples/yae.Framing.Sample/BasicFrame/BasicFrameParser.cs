@@ -4,8 +4,6 @@ using System.Buffers.Binary;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
 using yae.Framing.Parsing;
-using yae.Memory;
-
 namespace yae.Framing.Sample.BasicFrame
 {
     public class BasicFrameParser : IFrameParser<BasicFrame>
