@@ -14,7 +14,7 @@ using yae.Memory;
 [assembly: InternalsVisibleTo("yae.Framing.Tests")]
 namespace yae.Framing.IO
 {
-    public class FrameDecoder<TFrame>
+    public class FrameDecoder<TFrame> : IDisposable
     {
         private readonly IFrameReader<TFrame> _frameReader;
         private PipeReader _reader;
@@ -92,8 +92,8 @@ namespace yae.Framing.IO
             var reader = Interlocked.Exchange(ref _reader, null);
             if (reader == null) return;
 
-            try { reader.Complete(ex); } catch { }
-            try { reader.CancelPendingRead(); } catch { }
+            try { reader.Complete(ex); } catch { /* silent complete */ }
+            try { reader.CancelPendingRead(); } catch { /* silent cancel */ }
         }
         public void Dispose() => Close();
     }

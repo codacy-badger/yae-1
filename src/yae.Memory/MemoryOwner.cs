@@ -33,7 +33,7 @@ namespace yae.Memory
         {
             if (source.IsEmpty) return Empty<T>();
 
-            int len = checked((int)source.Length);
+            var len = checked((int)source.Length);
             var arr = ArrayPool<T>.Shared.Rent(len);
             source.CopyTo(arr);
             return new ArrayPoolOwner<T>(arr, len);

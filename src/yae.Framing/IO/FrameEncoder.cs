@@ -9,7 +9,7 @@ using yae.Framing.Parsing;
 
 namespace yae.Framing.IO
 {
-    public class FrameEncoder<TFrame>
+    public class FrameEncoder<TFrame> : IDisposable
     {
         internal PipeWriter Writer;
         private SemaphoreSlim _semaphore;
@@ -30,7 +30,7 @@ namespace yae.Framing.IO
                 if (obj.Writer == null) return;
 
                 var writer = obj.Writer;
-                await obj._semaphore.WaitAsync(token);
+                await obj._semaphore.WaitAsync(token).ConfigureAwait(false);
 
                 try
                 {
@@ -56,13 +56,13 @@ namespace yae.Framing.IO
 
                 var writer = obj.Writer;
 
-                await obj._semaphore.WaitAsync(t);
+                await obj._semaphore.WaitAsync(t).ConfigureAwait(false);
 
                 try
                 {
                     foreach (var (frame, payload) in enumerable)
                     {
-                        await obj._frameWriter.Write(writer, frame, payload);
+                        await obj._frameWriter.Write(writer, frame, payload).ConfigureAwait(false);
                         obj.FramesWritten++;
                     }
                 }
@@ -84,13 +84,13 @@ namespace yae.Framing.IO
 
                 var writer = obj.Writer;
 
-                await obj._semaphore.WaitAsync(t);
+                await obj._semaphore.WaitAsync(t).ConfigureAwait(false);
 
                 try
                 {
                     await foreach (var (frame, payload) in enumerable)
                     {
-                        await obj._frameWriter.Write(writer, frame, payload);
+                        await obj._frameWriter.Write(writer, frame, payload).ConfigureAwait(false);
                         obj.FramesWritten++;
                     }
                 }
@@ -120,8 +120,8 @@ namespace yae.Framing.IO
         {
             var writer = Interlocked.Exchange(ref Writer, null);
             if (writer == null) return;
-            try { writer.Complete(ex); } catch { }
-            try { writer.CancelPendingFlush(); } catch { }
+            try { writer.Complete(ex); } catch { /* silent complete */}
+            try { writer.CancelPendingFlush(); } catch { /* ignore errors */ }
             _semaphore.Dispose();
             _semaphore = null;
         }
