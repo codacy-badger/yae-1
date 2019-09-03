@@ -21,8 +21,11 @@ namespace yae.Framing.IO
 
         public FrameDecoder(IFrameReader<TFrame> frameReader) => _frameReader = frameReader;
 
+        public IAsyncEnumerable<(TFrame frame, ReadOnlySequence<byte> payload)> DecodeAsync()
+            => DecodeAsync(default);
+
         public async IAsyncEnumerable<(TFrame frame, ReadOnlySequence<byte> payload)> 
-            DecodeAsync([EnumeratorCancellation] CancellationToken token = default)
+            DecodeAsync([EnumeratorCancellation] CancellationToken token)
         {
             while (true)
             {
@@ -95,14 +98,17 @@ namespace yae.Framing.IO
 
         public bool Reset(PipeReader reader)
         {
-            if (Interlocked.CompareExchange(ref _reader, reader, null) != null) return false;
+            if (Interlocked.CompareExchange(ref _reader, reader, null) != null)
+            {
+                return false;
+            }
+
             FramesRead = 0;
             return true;
         }
 
         public void Close() => Close(null);
-        public void Close(Exception ex) => _close(ex);
-        private void _close(Exception ex = null)
+        public void Close(Exception ex)
         {
             var reader = Interlocked.Exchange(ref _reader, null);
             if (reader == null)

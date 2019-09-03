@@ -83,7 +83,10 @@ namespace yae.Framing.IO
         {
             static async PooledValueTask Produce(FrameEncoder<TFrame> obj, IAsyncEnumerable<(TFrame frame, ReadOnlyMemory<byte> payload)> enumerable, CancellationToken t)
             {
-                if (obj.Writer == null) return;
+                if (obj.Writer == null)
+                {
+                    return;
+                }
 
                 var writer = obj.Writer;
 
@@ -112,14 +115,18 @@ namespace yae.Framing.IO
         /// <returns>true if it has been successfully reset, otherwise false</returns>
         public bool Reset(PipeWriter writer)
         {
-            if (Interlocked.CompareExchange(ref Writer, writer, null) != null) return false;
+            if (Interlocked.CompareExchange(ref Writer, writer, null) != null)
+            {
+                return false;
+            }
+
             FramesWritten = 0;
             _semaphore = new SemaphoreSlim(1);
             return true;
         }
 
-
-        public void Close(Exception ex = null)
+        public void Close() => Close(null);
+        public void Close(Exception ex)
         {
             var writer = Interlocked.Exchange(ref Writer, null);
             if (writer == null)
@@ -129,10 +136,13 @@ namespace yae.Framing.IO
 
             try { writer.Complete(ex); } catch { /* silent complete */}
             try { writer.CancelPendingFlush(); } catch { /* ignore errors */ }
-            _semaphore.Dispose();
-            _semaphore = null;
         }
 
-        public void Dispose() => Close();
+        public void Dispose()
+        {
+            Close();
+            _semaphore?.Dispose();
+            _semaphore = null;
+        }
     }
 }

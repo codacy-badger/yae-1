@@ -21,7 +21,9 @@ namespace yae.Framing.Parsing
         {
             var headerLen = GetHeaderLength(frame);
             if(headerLen < 0)
+            {
                 throw new ArgumentOutOfRangeException(nameof(GetHeaderLength));
+            }
 
             var headerSpan = writer.GetSpan(headerLen);
             WriteHeader(headerSpan, frame, payload.Length);
